@@ -1,0 +1,19 @@
+# Build directory - auto-generated, no need to track in git
+build/
+out/
+
+# Compiled binaries and object files
+*.exe
+*.obj
+*.o
+*.ilk
+*.pdb
+
+# VS Code personal settings (optional - remove this line if you want to share build/debug configs with teammates)
+.vscode/
+
+# CMake generated files
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+compile_commands.json
