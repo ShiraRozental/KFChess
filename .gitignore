@@ -1,6 +1,10 @@
 # Build directory - auto-generated, no need to track in git
 build/
+build_tests/
 out/
+
+# Generated coverage report (regenerate with gcovr)
+coverage/
 
 # Compiled binaries and object files
 *.exe
