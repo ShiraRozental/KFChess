@@ -1,4 +1,5 @@
 #include "Game.h"
+#include "MovementRuleFactory.h"
 #include <sstream>
 
 namespace {
@@ -58,7 +59,11 @@ void Game::handleClick(int pixelX, int pixelY) {
         return;
     }
 
-    board_.movePiece(selected_->row, selected_->col, row, col);
+    std::optional<PieceType> movingType = board_.pieceTypeAt(selected_->row, selected_->col);
+    if (movingType.has_value() &&
+        movementRuleFor(*movingType).isLegalMove(selected_->row, selected_->col, row, col)) {
+        board_.movePiece(selected_->row, selected_->col, row, col);
+    }
     selected_.reset();
 }
 

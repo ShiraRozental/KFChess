@@ -3,6 +3,8 @@
 #include <string>
 #include <ostream>
 #include <istream>
+#include <optional>
+#include "PieceType.h"
 
 class Board {
 public:
@@ -13,6 +15,7 @@ public:
     bool isEmpty(int row, int col) const;
     bool isSameColor(int row1, int col1, int row2, int col2) const;
     void movePiece(int fromRow, int fromCol, int toRow, int toCol);
+    std::optional<PieceType> pieceTypeAt(int row, int col) const;
 
 private:
     static bool isValidToken(const std::string& token);

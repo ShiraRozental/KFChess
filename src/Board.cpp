@@ -16,6 +16,21 @@ namespace {
     const char kWhiteColorSymbol = 'w';
     const char kBlackColorSymbol = 'b';
     const std::string kValidPieceLetters = "KQRBNP";
+
+    // Maps a token's piece letter to its PieceType. Returns nullopt for an
+    // unrecognized letter (should not happen for tokens that already passed
+    // isValidToken).
+    std::optional<PieceType> charToPieceType(char c) {
+        switch (c) {
+            case 'K': return PieceType::King;
+            case 'Q': return PieceType::Queen;
+            case 'R': return PieceType::Rook;
+            case 'B': return PieceType::Bishop;
+            case 'N': return PieceType::Knight;
+            case 'P': return PieceType::Pawn;
+            default:  return std::nullopt;
+        }
+    }
 }
 
 // Returns true if the token has a valid chess-piece format.
@@ -102,4 +117,11 @@ void Board::movePiece(int fromRow, int fromCol, int toRow, int toCol) {
 // Rebuilds the text row from the current grid values.
 void Board::rebuildRow(int row) {
     rows_[row] = joinTokens(grid_[row]);
+}
+
+// Returns the piece type at a cell, or nullopt if the cell is out of bounds
+// or empty.
+std::optional<PieceType> Board::pieceTypeAt(int row, int col) const {
+    if (!inBounds(row, col) || isEmpty(row, col)) return std::nullopt;
+    return charToPieceType(grid_[row][col][1]);
 }
