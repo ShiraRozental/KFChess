@@ -40,6 +40,12 @@ After analysis is approved:
 
 **Split large tasks into sub-steps. After each sub-step — wait for user approval.**
 
+**After every file (or sub-step) you write or change, before moving to the next one, explain:**
+- Exactly what you did in that file
+- Which functions/classes you added or changed
+- The shape/design of the solution (how the pieces fit together)
+- Which part of the task/requirement this specific file or step solves
+
 ---
 
 ## Step 4: TESTS
