@@ -27,12 +27,10 @@ void Game::executeLine(const std::string& line, std::ostream& out) {
 
     if (keyword == "click") {
         int x, y;
-        ss >> x >> y;
-        handleClick(x, y);
+        if (ss >> x >> y) handleClick(x, y);
     } else if (keyword == "wait") {
         int ms;
-        ss >> ms;
-        handleWait(ms);
+        if (ss >> ms) handleWait(ms);
     } else if (keyword == "print") {
         std::string second;
         ss >> second;

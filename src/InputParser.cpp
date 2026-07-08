@@ -8,12 +8,13 @@ void InputParser::parse(std::istream& in, std::string& boardText, std::vector<st
     bool readingCommands = false;
 
     while (std::getline(in, line)) {
-        if (trim(line) == "Commands:") {
-                readingCommands = true;
+        std::string trimmed = trim(line);
+        if (trimmed == "Commands:") {
+            readingCommands = true;
             continue;
         }
         if (readingCommands) {
-            if (!line.empty()) commandLines.push_back(line);
+            if (!trimmed.empty()) commandLines.push_back(line);
         } else {
             boardStream << line << "\n";
         }
