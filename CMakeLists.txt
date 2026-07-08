@@ -16,17 +16,11 @@ option(BUILD_TESTS "Build the doctest-based unit test suite" ON)
 option(ENABLE_COVERAGE "Instrument the test build for gcov/gcovr coverage" OFF)
 
 if(BUILD_TESTS)
-    include(FetchContent)
-    FetchContent_Declare(
-        doctest
-        GIT_REPOSITORY https://github.com/doctest/doctest.git
-        GIT_TAG v2.4.11
-    )
-    # doctest's own CMakeLists.txt declares a cmake_minimum_required older
-    # than modern CMake still supports; this raises the floor just for it.
-    set(CMAKE_POLICY_VERSION_MINIMUM 3.5)
-    FetchContent_MakeAvailable(doctest)
-    unset(CMAKE_POLICY_VERSION_MINIMUM)
+    # doctest מגיע ארוז בפרויקט (tests/doctest) כדי שהבנייה תעבוד
+    # גם בלי גישה לאינטרנט (למשל בעת הגשה במודל).
+    add_library(doctest INTERFACE)
+    target_include_directories(doctest INTERFACE tests)
+    add_library(doctest::doctest ALIAS doctest)
 
     # אותם קבצי לוגיקה כמו KFChess, חוץ מ-main.cpp (יש לו main משלו)
     set(GAME_SOURCES ${SOURCES})
