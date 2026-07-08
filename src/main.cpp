@@ -1,17 +1,25 @@
 #include <iostream>
-#include "Board.h"
+#include "InputParser.h"
+#include "Game.h"
 
 int main() {
     std::ios_base::sync_with_stdio(false);
     std::cin.tie(nullptr);
 
-    Board board;
-    std::string errorMessage;
+    std::string boardText;
+    std::vector<std::string> commandLines;
+    InputParser::parse(std::cin, boardText, commandLines);
 
-    if (!Board::fromStream(std::cin, board, errorMessage)) {
+    Game game;
+    std::string errorMessage;
+    if (!game.loadBoard(boardText, errorMessage)) {
         std::cout << errorMessage << "\n";
         return 0;
     }
-    board.print(std::cout);
+
+    for (const auto& line : commandLines) {
+        game.executeLine(line, std::cout);
+    }
+
     return 0;
 }
