@@ -1,22 +1,31 @@
 #include "Board.h"
+#include "StringUtils.h"
 #include <sstream>
 namespace {
-    std::string trim(const std::string& s) {
-        size_t start = s.find_first_not_of(" \t\r\n");
-        if (start == std::string::npos) return "";
-        size_t end = s.find_last_not_of(" \t\r\n");
-        return s.substr(start, end - start + 1);
+    // Joins tokens with a single space to produce the canonical row text.
+    std::string joinTokens(const std::vector<std::string>& tokens) {
+        std::string joined;
+        for (size_t i = 0; i < tokens.size(); ++i) {
+            if (i > 0) joined += " ";
+            joined += tokens[i];
+        }
+        return joined;
     }
+
+    const char kEmptyCellSymbol = '.';
+    const char kWhiteColorSymbol = 'w';
+    const char kBlackColorSymbol = 'b';
+    const std::string kValidPieceLetters = "KQRBNP";
 }
 
 // Returns true if the token has a valid chess-piece format.
 bool Board::isValidToken(const std::string& token) {
-    if (token == ".") return true;
+    if (token.length() == 1 && token[0] == kEmptyCellSymbol) return true;
     if (token.length() != 2) return false;
     char color = token[0];
     char piece = token[1];
-    if (color != 'w' && color != 'b') return false;
-    return std::string("KQRBNP").find(piece) != std::string::npos;
+    if (color != kWhiteColorSymbol && color != kBlackColorSymbol) return false;
+    return kValidPieceLetters.find(piece) != std::string::npos;
 }
 
 // Reads the board from an input stream and stores it in the board object.
@@ -29,7 +38,7 @@ bool Board::fromStream(std::istream& in, Board& outBoard, std::string& errorMess
         if (marker == "Board:") { readingBoard = true; continue; }
         if (marker == "Commands:") { readingBoard = false; continue; }
 
-        if (!readingBoard || line.empty()) continue;
+        if (!readingBoard || marker.empty()) continue;
 
         std::stringstream ss(line);
         std::string token;
@@ -51,7 +60,7 @@ bool Board::fromStream(std::istream& in, Board& outBoard, std::string& errorMess
             return false;
         }
 
-        outBoard.rows_.push_back(line);
+        outBoard.rows_.push_back(joinTokens(tokens));
         outBoard.grid_.push_back(tokens);
     }
     return true;
@@ -86,10 +95,5 @@ void Board::movePiece(int fromRow, int fromCol, int toRow, int toCol) {
 
 // Rebuilds the text row from the current grid values.
 void Board::rebuildRow(int row) {
-    std::string rebuilt;
-    for (size_t c = 0; c < grid_[row].size(); ++c) {
-        if (c > 0) rebuilt += " ";
-        rebuilt += grid_[row][c];
-    }
-    rows_[row] = rebuilt;
+    rows_[row] = joinTokens(grid_[row]);
 }
