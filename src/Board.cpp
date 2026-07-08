@@ -79,9 +79,15 @@ bool Board::inBounds(int row, int col) const {
     return row >= 0 && row < (int)grid_.size() && col >= 0 && col < width_;
 }
 
-// Returns the token stored at the given board position.
-const std::string& Board::tokenAt(int row, int col) const {
-    return grid_[row][col];
+// Checks whether a cell has no piece on it.
+bool Board::isEmpty(int row, int col) const {
+    return grid_[row][col][0] == kEmptyCellSymbol;
+}
+
+// Checks whether two cells both hold pieces of the same color.
+bool Board::isSameColor(int row1, int col1, int row2, int col2) const {
+    if (isEmpty(row1, col1) || isEmpty(row2, col2)) return false;
+    return grid_[row1][col1][0] == grid_[row2][col2][0];
 }
 
 // Moves a piece from one cell to another and rebuilds the affected rows.

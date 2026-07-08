@@ -1,6 +1,18 @@
 #include "Game.h"
 #include <sstream>
 
+namespace {
+    constexpr int kCellSizePixels = 100;
+
+    // Converts a pixel coordinate to a cell index using floor division, so
+    // negative pixels (left/above the board) map to negative cell indices
+    // instead of wrapping to 0 under C++'s truncating integer division.
+    int pixelToCell(int pixel) {
+        if (pixel >= 0) return pixel / kCellSizePixels;
+        return (pixel - (kCellSizePixels - 1)) / kCellSizePixels;
+    }
+}
+
 // Loads a board description into the game object.
 bool Game::loadBoard(const std::string& boardText, std::string& errorMessage) {
     std::istringstream in(boardText);
@@ -31,21 +43,19 @@ void Game::executeLine(const std::string& line, std::ostream& out) {
 
 // Handles a click by selecting or moving a piece based on the clicked cell.
 void Game::handleClick(int pixelX, int pixelY) {
-    int col = pixelX / 100;
-    int row = pixelY / 100;
+    int col = pixelToCell(pixelX);
+    int row = pixelToCell(pixelY);
 
     if (!board_.inBounds(row, col)) return;
 
-    const std::string& token = board_.tokenAt(row, col);
-    bool cellHasPiece = (token != ".");
+    bool cellHasPiece = !board_.isEmpty(row, col);
 
     if (!selected_.has_value()) {
         if (cellHasPiece) selected_ = Position{row, col};
         return;
     }
 
-    const std::string& selectedToken = board_.tokenAt(selected_->row, selected_->col);
-    if (cellHasPiece && token[0] == selectedToken[0]) {
+    if (cellHasPiece && board_.isSameColor(row, col, selected_->row, selected_->col)) {
         selected_ = Position{row, col};
         return;
     }

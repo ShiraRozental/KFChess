@@ -10,7 +10,8 @@ public:
 
     void print(std::ostream& out) const;
     bool inBounds(int row, int col) const;
-    const std::string& tokenAt(int row, int col) const;
+    bool isEmpty(int row, int col) const;
+    bool isSameColor(int row1, int col1, int row2, int col2) const;
     void movePiece(int fromRow, int fromCol, int toRow, int toCol);
 
 private:
