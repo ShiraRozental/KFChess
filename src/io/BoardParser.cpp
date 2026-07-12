@@ -1,8 +1,8 @@
-#include "InputParser.h"
-#include "StringUtils.h"
+#include "io/BoardParser.h"
+#include "io/StringUtils.h"
 #include <sstream>
 // Splits the input into board text and a list of command lines.
-void InputParser::parse(std::istream& in, std::string& boardText, std::vector<std::string>& commandLines) {
+void BoardParser::parse(std::istream& in, std::string& boardText, std::vector<std::string>& commandLines) {
     std::string line;
     std::ostringstream boardStream;
     bool readingCommands = false;

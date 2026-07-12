@@ -1,5 +1,5 @@
 #include "doctest/doctest.h"
-#include "PieceMovementRules.h"
+#include "rules/PieceRules.h"
 
 TEST_CASE("sliding pieces report that they require a clear path") {
     CHECK(RookMovementRule().requiresClearPath());

@@ -1,5 +1,5 @@
 #include "doctest/doctest.h"
-#include "Board.h"
+#include "model/Board.h"
 #include <sstream>
 
 namespace {

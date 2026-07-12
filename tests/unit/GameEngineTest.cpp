@@ -1,9 +1,9 @@
 #include "doctest/doctest.h"
-#include "Game.h"
+#include "engine/GameEngine.h"
 #include <sstream>
 
 TEST_CASE("click selects then moves a piece") {
-    Game game;
+    GameEngine game;
     std::string error;
     game.loadBoard("Board:\nwK . .\n. . .\n. . .\n", error);
     std::ostringstream out;
@@ -15,7 +15,7 @@ TEST_CASE("click selects then moves a piece") {
 }
 
 TEST_CASE("click just outside the board with a negative pixel is ignored") {
-    Game game;
+    GameEngine game;
     std::string error;
     game.loadBoard("Board:\nwK . .\nbR . .\n. . .\n", error);
     std::ostringstream out;
@@ -26,7 +26,7 @@ TEST_CASE("click just outside the board with a negative pixel is ignored") {
 }
 
 TEST_CASE("clicking an empty cell without a selection is ignored") {
-    Game game;
+    GameEngine game;
     std::string error;
     game.loadBoard("Board:\nwK . .\n. . .\n. . .\n", error);
     std::ostringstream out;
@@ -36,7 +36,7 @@ TEST_CASE("clicking an empty cell without a selection is ignored") {
 }
 
 TEST_CASE("clicking another friendly piece replaces the selection") {
-    Game game;
+    GameEngine game;
     std::string error;
     game.loadBoard("Board:\nwR . wK\n. . .\n", error);
     std::ostringstream out;
@@ -49,7 +49,7 @@ TEST_CASE("clicking another friendly piece replaces the selection") {
 }
 
 TEST_CASE("malformed click arguments are ignored") {
-    Game game;
+    GameEngine game;
     std::string error;
     game.loadBoard("Board:\nwK .\n. .\n", error);
     std::ostringstream out;
@@ -59,14 +59,14 @@ TEST_CASE("malformed click arguments are ignored") {
 }
 
 TEST_CASE("loadBoard surfaces parsing errors") {
-    Game game;
+    GameEngine game;
     std::string error;
     CHECK_FALSE(game.loadBoard("Board:\nwK xZ\n", error));
     CHECK(error == "ERROR UNKNOWN_TOKEN");
 }
 
 TEST_CASE("clicking a rook blocked by a piece in its path does not move it") {
-    Game game;
+    GameEngine game;
     std::string error;
     game.loadBoard("Board:\nwR bP .\n", error);
     std::ostringstream out;
@@ -77,7 +77,7 @@ TEST_CASE("clicking a rook blocked by a piece in its path does not move it") {
 }
 
 TEST_CASE("clicking a rook with a clear path captures the enemy piece at the destination") {
-    Game game;
+    GameEngine game;
     std::string error;
     game.loadBoard("Board:\nwR . bP\n", error);
     std::ostringstream out;
@@ -89,7 +89,7 @@ TEST_CASE("clicking a rook with a clear path captures the enemy piece at the des
 }
 
 TEST_CASE("knight jumps over surrounding pieces to reach its destination") {
-    Game game;
+    GameEngine game;
     std::string error;
     game.loadBoard("Board:\nwN bP bP\nbP bP .\n", error);
     std::ostringstream out;
@@ -101,7 +101,7 @@ TEST_CASE("knight jumps over surrounding pieces to reach its destination") {
 }
 
 TEST_CASE("a two-cell move needs two cells' worth of wait time to arrive") {
-    Game game;
+    GameEngine game;
     std::string error;
     game.loadBoard("Board:\nwR . .\n", error);
     std::ostringstream out;
@@ -115,7 +115,7 @@ TEST_CASE("a two-cell move needs two cells' worth of wait time to arrive") {
 }
 
 TEST_CASE("a move does not appear on the board before its arrival time") {
-    Game game;
+    GameEngine game;
     std::string error;
     game.loadBoard("Board:\nwK . .\n. . .\n. . .\n", error);
     std::ostringstream out;
@@ -126,7 +126,7 @@ TEST_CASE("a move does not appear on the board before its arrival time") {
 }
 
 TEST_CASE("a move does not appear after a wait shorter than the move duration") {
-    Game game;
+    GameEngine game;
     std::string error;
     game.loadBoard("Board:\nwK . .\n. . .\n. . .\n", error);
     std::ostringstream out;
@@ -138,7 +138,7 @@ TEST_CASE("a move does not appear after a wait shorter than the move duration") 
 }
 
 TEST_CASE("a move appears at its destination after waiting long enough") {
-    Game game;
+    GameEngine game;
     std::string error;
     game.loadBoard("Board:\nwK . .\n. . .\n. . .\n", error);
     std::ostringstream out;
@@ -150,7 +150,7 @@ TEST_CASE("a move appears at its destination after waiting long enough") {
 }
 
 TEST_CASE("a move appears exactly when the wait matches the move duration") {
-    Game game;
+    GameEngine game;
     std::string error;
     game.loadBoard("Board:\nwK . .\n. . .\n. . .\n", error);
     std::ostringstream out;
@@ -162,7 +162,7 @@ TEST_CASE("a move appears exactly when the wait matches the move duration") {
 }
 
 TEST_CASE("a second piece can move only after the first pending move has fully resolved") {
-    Game game;
+    GameEngine game;
     std::string error;
     game.loadBoard("Board:\nwK . .\n. . bK\n. . .\n", error);
     std::ostringstream out;
@@ -177,7 +177,7 @@ TEST_CASE("a second piece can move only after the first pending move has fully r
 }
 
 TEST_CASE("an illegal click does not schedule a pending move") {
-    Game game;
+    GameEngine game;
     std::string error;
     game.loadBoard("Board:\nwR bP .\n", error);
     std::ostringstream out;
@@ -189,7 +189,7 @@ TEST_CASE("an illegal click does not schedule a pending move") {
 }
 
 TEST_CASE("a piece cannot be redirected while it is already moving") {
-    Game game;
+    GameEngine game;
     std::string error;
     game.loadBoard("Board:\nwR . .\n. . .\n. . .\n", error);
     std::ostringstream out;
@@ -203,7 +203,7 @@ TEST_CASE("a piece cannot be redirected while it is already moving") {
 }
 
 TEST_CASE("a redirect attempt while moving does not cancel the original pending move") {
-    Game game;
+    GameEngine game;
     std::string error;
     game.loadBoard("Board:\nwR . .\n. . .\n. . .\n", error);
     std::ostringstream out;
@@ -221,7 +221,7 @@ TEST_CASE("a redirect attempt while moving does not cancel the original pending 
 }
 
 TEST_CASE("a piece can move again immediately after arriving, with no extra wait") {
-    Game game;
+    GameEngine game;
     std::string error;
     game.loadBoard("Board:\nwK . .\n. . .\n. . .\n", error);
     std::ostringstream out;
@@ -236,7 +236,7 @@ TEST_CASE("a piece can move again immediately after arriving, with no extra wait
 }
 
 TEST_CASE("redirect is blocked even when the new destination would otherwise be a legal move") {
-    Game game;
+    GameEngine game;
     std::string error;
     game.loadBoard("Board:\nwR . .\n", error);
     std::ostringstream out;
@@ -250,7 +250,7 @@ TEST_CASE("redirect is blocked even when the new destination would otherwise be 
 }
 
 TEST_CASE("a piece of the opposite color cannot move while another piece is mid-transit") {
-    Game game;
+    GameEngine game;
     std::string error;
     game.loadBoard("Board:\nwR . .\n. . .\nbR . .\n", error);
     std::ostringstream out;
@@ -264,7 +264,7 @@ TEST_CASE("a piece of the opposite color cannot move while another piece is mid-
 }
 
 TEST_CASE("a piece of the same color also cannot move while another piece is mid-transit") {
-    Game game;
+    GameEngine game;
     std::string error;
     game.loadBoard("Board:\nwR . .\n. . .\nwN . .\n", error);
     std::ostringstream out;
@@ -278,7 +278,7 @@ TEST_CASE("a piece of the same color also cannot move while another piece is mid
 }
 
 TEST_CASE("capturing the enemy king ends the game") {
-    Game game;
+    GameEngine game;
     std::string error;
     game.loadBoard("Board:\nwR . bK\n", error);
     std::ostringstream out;
@@ -290,7 +290,7 @@ TEST_CASE("capturing the enemy king ends the game") {
 }
 
 TEST_CASE("after the game is over, further click and wait commands are ignored") {
-    Game game;
+    GameEngine game;
     std::string error;
     game.loadBoard("Board:\nwR . bK\nbR . .\n", error);
     std::ostringstream out;
@@ -305,7 +305,7 @@ TEST_CASE("after the game is over, further click and wait commands are ignored")
 }
 
 TEST_CASE("black capturing white's king reports black as the winner") {
-    Game game;
+    GameEngine game;
     std::string error;
     game.loadBoard("Board:\nbR . wK\n", error);
     std::ostringstream out;
@@ -318,7 +318,7 @@ TEST_CASE("black capturing white's king reports black as the winner") {
 }
 
 TEST_CASE("a pawn can move two cells from its start row and takes proportionally longer to arrive") {
-    Game game;
+    GameEngine game;
     std::string error;
     // 5 rows: the start row is the bottom edge (row 4), and the destination
     // row 2 is not the promotion row, so this test isolates movement/timing
@@ -337,7 +337,7 @@ TEST_CASE("a pawn can move two cells from its start row and takes proportionally
 }
 
 TEST_CASE("a pawn cannot move two cells from a row that is not its start row") {
-    Game game;
+    GameEngine game;
     std::string error;
     game.loadBoard("Board:\n. . .\n. . .\nwP . .\n. . .\n", error);
     std::ostringstream out;
@@ -349,7 +349,7 @@ TEST_CASE("a pawn cannot move two cells from a row that is not its start row") {
 }
 
 TEST_CASE("a white pawn becomes a queen when it reaches the last row") {
-    Game game;
+    GameEngine game;
     std::string error;
     game.loadBoard("Board:\n. . .\nwP . .\n", error);
     std::ostringstream out;
@@ -361,7 +361,7 @@ TEST_CASE("a white pawn becomes a queen when it reaches the last row") {
 }
 
 TEST_CASE("a black pawn becomes a queen when it reaches the last row") {
-    Game game;
+    GameEngine game;
     std::string error;
     game.loadBoard("Board:\nbP . .\n. . .\n", error);
     std::ostringstream out;
@@ -373,7 +373,7 @@ TEST_CASE("a black pawn becomes a queen when it reaches the last row") {
 }
 
 TEST_CASE("a pawn that captures diagonally into the last row also becomes a queen") {
-    Game game;
+    GameEngine game;
     std::string error;
     game.loadBoard("Board:\nbR . .\n. wP .\n", error);
     std::ostringstream out;
@@ -385,7 +385,7 @@ TEST_CASE("a pawn that captures diagonally into the last row also becomes a quee
 }
 
 TEST_CASE("isGameOver and winner report correctly before and after white wins") {
-    Game game;
+    GameEngine game;
     std::string error;
     game.loadBoard("Board:\nwR . bK\n", error);
     std::ostringstream out;
@@ -402,7 +402,7 @@ TEST_CASE("isGameOver and winner report correctly before and after white wins") 
 }
 
 TEST_CASE("a jump with nothing arriving lands the piece back on its own square") {
-    Game game;
+    GameEngine game;
     std::string error;
     game.loadBoard("Board:\n. . .\n. wK .\n. . .\n", error);
     std::ostringstream out;
@@ -413,7 +413,7 @@ TEST_CASE("a jump with nothing arriving lands the piece back on its own square")
 }
 
 TEST_CASE("an airborne piece captures an enemy that arrives at its cell before it lands") {
-    Game game;
+    GameEngine game;
     std::string error;
     game.loadBoard("Board:\n. . .\nwK bR .\n. . .\n", error);
     std::ostringstream out;
@@ -426,7 +426,7 @@ TEST_CASE("an airborne piece captures an enemy that arrives at its cell before i
 }
 
 TEST_CASE("jumping after a capture has already resolved does not undo it") {
-    Game game;
+    GameEngine game;
     std::string error;
     game.loadBoard("Board:\n. . .\nwK bR .\n. . .\n", error);
     std::ostringstream out;
@@ -439,7 +439,7 @@ TEST_CASE("jumping after a capture has already resolved does not undo it") {
 }
 
 TEST_CASE("an enemy that arrives after a jump has already landed captures normally") {
-    Game game;
+    GameEngine game;
     std::string error;
     game.loadBoard("Board:\n. . . .\nwK . . bR\n. . . .\n", error);
     std::ostringstream out;
@@ -453,7 +453,7 @@ TEST_CASE("an enemy that arrives after a jump has already landed captures normal
 }
 
 TEST_CASE("a piece that is mid-transit cannot jump") {
-    Game game;
+    GameEngine game;
     std::string error;
     game.loadBoard("Board:\nwR . .\n", error);
     std::ostringstream out;
@@ -467,7 +467,7 @@ TEST_CASE("a piece that is mid-transit cannot jump") {
 }
 
 TEST_CASE("an airborne piece only captures an arriving enemy, not a same-color piece that could never legally move there") {
-    Game game;
+    GameEngine game;
     std::string error;
     game.loadBoard("Board:\n. . .\nwK wR .\n. . .\n", error);
     std::ostringstream out;
@@ -480,7 +480,7 @@ TEST_CASE("an airborne piece only captures an arriving enemy, not a same-color p
 }
 
 TEST_CASE("jumping on an empty cell does nothing") {
-    Game game;
+    GameEngine game;
     std::string error;
     game.loadBoard("Board:\n. . .\nwK . .\n. . .\n", error);
     std::ostringstream out;
@@ -491,7 +491,7 @@ TEST_CASE("jumping on an empty cell does nothing") {
 }
 
 TEST_CASE("jumping at an out-of-bounds pixel is ignored") {
-    Game game;
+    GameEngine game;
     std::string error;
     game.loadBoard("Board:\nwK . .\n", error);
     std::ostringstream out;
@@ -501,7 +501,7 @@ TEST_CASE("jumping at an out-of-bounds pixel is ignored") {
 }
 
 TEST_CASE("jumping an already-airborne piece is ignored and does not extend its protection") {
-    Game game;
+    GameEngine game;
     std::string error;
     game.loadBoard("Board:\n. . . .\nwK . . bR\n. . . .\n", error);
     std::ostringstream out;

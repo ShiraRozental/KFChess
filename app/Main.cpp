@@ -1,6 +1,6 @@
 #include <iostream>
-#include "InputParser.h"
-#include "Game.h"
+#include "io/BoardParser.h"
+#include "engine/GameEngine.h"
 //githube:
 //https://github.com/ShiraRozental/KFChess
 int main() {
@@ -9,9 +9,9 @@ int main() {
 
     std::string boardText;
     std::vector<std::string> commandLines;
-    InputParser::parse(std::cin, boardText, commandLines);
+    BoardParser::parse(std::cin, boardText, commandLines);
 
-    Game game;
+    GameEngine game;
     std::string errorMessage;
     if (!game.loadBoard(boardText, errorMessage)) {
         std::cout << errorMessage << "\n";

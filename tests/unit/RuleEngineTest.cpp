@@ -1,5 +1,5 @@
 #include "doctest/doctest.h"
-#include "MoveLegality.h"
+#include "rules/RuleEngine.h"
 #include <sstream>
 
 namespace {

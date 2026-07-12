@@ -1,5 +1,5 @@
-#include "MovementRuleFactory.h"
-#include "PieceMovementRules.h"
+#include "rules/MovementRuleFactory.h"
+#include "rules/PieceRules.h"
 
 const MovementRule& movementRuleFor(PieceType type, PieceColor color) {
     static const KingMovementRule king;

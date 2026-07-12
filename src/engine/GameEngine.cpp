@@ -1,6 +1,6 @@
-#include "Game.h"
-#include "MoveLegality.h"
-#include "MovementRuleFactory.h"
+#include "engine/GameEngine.h"
+#include "rules/RuleEngine.h"
+#include "rules/MovementRuleFactory.h"
 #include <algorithm>
 #include <cstdlib>
 #include <sstream>
@@ -27,13 +27,13 @@ namespace {
 }
 
 // Loads a board description into the game object.
-bool Game::loadBoard(const std::string& boardText, std::string& errorMessage) {
+bool GameEngine::loadBoard(const std::string& boardText, std::string& errorMessage) {
     std::istringstream in(boardText);
     return Board::fromStream(in, board_, errorMessage);
 }
 
 // Executes a single command line based on its keyword.
-void Game::executeLine(const std::string& line, std::ostream& out) {
+void GameEngine::executeLine(const std::string& line, std::ostream& out) {
     std::istringstream ss(line);
     std::string keyword;
     ss >> keyword;
@@ -56,7 +56,7 @@ void Game::executeLine(const std::string& line, std::ostream& out) {
 }
 
 // Handles a click by selecting or moving a piece based on the clicked cell.
-void Game::handleClick(int pixelX, int pixelY) {
+void GameEngine::handleClick(int pixelX, int pixelY) {
     if (isGameOver()) return;
 
     int col = pixelToCell(pixelX);
@@ -95,7 +95,7 @@ void Game::handleClick(int pixelX, int pixelY) {
 // arrival time has now been reached. Jumps are resolved after moves so that
 // a jump landing in this same tick still counts as airborne for any move
 // that arrives at its cell at the same moment (defense wins ties).
-void Game::handleWait(int ms) {
+void GameEngine::handleWait(int ms) {
     if (isGameOver()) return;
 
     clockMs_ += ms;
@@ -107,7 +107,7 @@ void Game::handleWait(int ms) {
 // place. A piece that is mid-transit (moving) or already airborne cannot
 // jump; both cases are silently ignored, matching how illegal clicks are
 // ignored elsewhere.
-void Game::handleJump(int pixelX, int pixelY) {
+void GameEngine::handleJump(int pixelX, int pixelY) {
     if (isGameOver()) return;
 
     int col = pixelToCell(pixelX);
@@ -131,7 +131,7 @@ void Game::handleJump(int pixelX, int pixelY) {
 // jump), the arriving piece is captured instead: it never lands, so it is
 // simply removed from its origin and the airborne defender is left exactly
 // as it was (see PendingJump).
-void Game::applyDueMoves() {
+void GameEngine::applyDueMoves() {
     std::vector<PendingMove> stillPending;
     for (const PendingMove& move : pendingMoves_) {
         if (isGameOver()) {
@@ -167,7 +167,7 @@ void Game::applyDueMoves() {
 
 // Removes every jump whose landing time has passed. A landed jump needs no
 // board mutation: the piece never left its cell.
-void Game::applyDueJumps() {
+void GameEngine::applyDueJumps() {
     std::vector<PendingJump> stillAirborne;
     for (const PendingJump& jump : pendingJumps_) {
         if (jump.endTimeMs > clockMs_) {
@@ -182,7 +182,7 @@ void Game::applyDueJumps() {
 // Piece type and color must be the ones the piece had before this move, so
 // promotion is decided by the rule that actually made the move, not by
 // whatever ends up on the board.
-void Game::promoteIfNeeded(int row, int col, PieceType type, PieceColor color) {
+void GameEngine::promoteIfNeeded(int row, int col, PieceType type, PieceColor color) {
     const MovementRule& rule = movementRuleFor(type, color);
     if (rule.reachesPromotionRow(row, board_.rowCount())) {
         board_.setPieceType(row, col, PieceType::Queen);
@@ -190,12 +190,12 @@ void Game::promoteIfNeeded(int row, int col, PieceType type, PieceColor color) {
 }
 
 // Returns true once a king has been captured and the game has a winner.
-bool Game::isGameOver() const {
+bool GameEngine::isGameOver() const {
     return gameState_ != GameState::InProgress;
 }
 
 // Returns the winning color, or nullopt while the game is still in progress.
-std::optional<PieceColor> Game::winner() const {
+std::optional<PieceColor> GameEngine::winner() const {
     if (gameState_ == GameState::WhiteWins) return PieceColor::White;
     if (gameState_ == GameState::BlackWins) return PieceColor::Black;
     return std::nullopt;
@@ -203,20 +203,20 @@ std::optional<PieceColor> Game::winner() const {
 
 // Maps the color of the piece that captured the enemy king to the
 // corresponding game outcome.
-GameState Game::winningStateFor(PieceColor color) {
+GameState GameEngine::winningStateFor(PieceColor color) {
     return color == PieceColor::White ? GameState::WhiteWins : GameState::BlackWins;
 }
 
 // Returns true if some piece (of either color) is currently mid-transit
 // toward a pending destination. Only one move may be in flight on the board
 // at a time: no new move can be scheduled until the current one arrives.
-bool Game::isAnyMovePending() const {
+bool GameEngine::isAnyMovePending() const {
     return !pendingMoves_.empty();
 }
 
 // Returns true if the piece at (row, col) is currently mid-transit as the
 // origin of some pending move (a moving piece cannot also jump).
-bool Game::isPieceMoving(int row, int col) const {
+bool GameEngine::isPieceMoving(int row, int col) const {
     for (const PendingMove& move : pendingMoves_) {
         if (move.fromRow == row && move.fromCol == col) return true;
     }
@@ -225,7 +225,7 @@ bool Game::isPieceMoving(int row, int col) const {
 
 // Returns true if the piece at (row, col) is currently airborne from a
 // jump that has not yet landed.
-bool Game::isPieceAirborne(int row, int col) const {
+bool GameEngine::isPieceAirborne(int row, int col) const {
     for (const PendingJump& jump : pendingJumps_) {
         if (jump.row == row && jump.col == col) return true;
     }
@@ -233,7 +233,7 @@ bool Game::isPieceAirborne(int row, int col) const {
 }
 
 // Prints the current board state to the output stream.
-void Game::handlePrintBoard(std::ostream& out) {
+void GameEngine::handlePrintBoard(std::ostream& out) {
     board_.print(out);
     out << "\n";
 }

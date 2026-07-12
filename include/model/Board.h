@@ -4,8 +4,8 @@
 #include <ostream>
 #include <istream>
 #include <optional>
-#include "PieceType.h"
-#include "PieceColor.h"
+#include "model/PieceType.h"
+#include "model/PieceColor.h"
 
 class Board {
 public:

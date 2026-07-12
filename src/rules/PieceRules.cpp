@@ -1,4 +1,4 @@
-#include "PieceMovementRules.h"
+#include "rules/PieceRules.h"
 #include <cstdlib>
 
 namespace {

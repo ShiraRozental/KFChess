@@ -3,10 +3,10 @@
 #include <ostream>
 #include <optional>
 #include <vector>
-#include "Board.h"
-#include "GameState.h"
-#include "PieceColor.h"
-#include "PieceType.h"
+#include "model/Board.h"
+#include "model/GameState.h"
+#include "model/PieceColor.h"
+#include "model/PieceType.h"
 
 struct Position {
     int row;
@@ -27,14 +27,14 @@ struct PendingMove {
 // A piece that jumped in place and is airborne until endTimeMs. While
 // airborne it stays on (row, col): it never moves, but if an enemy's
 // pending move arrives at this same cell before it lands, it captures that
-// enemy instead of being captured (see Game::applyDueMoves).
+// enemy instead of being captured (see GameEngine::applyDueMoves).
 struct PendingJump {
     int row;
     int col;
     long long endTimeMs;
 };
 
-class Game {
+class GameEngine {
 public:
     bool loadBoard(const std::string& boardText, std::string& errorMessage);
     void executeLine(const std::string& line, std::ostream& out);

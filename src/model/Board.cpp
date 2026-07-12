@@ -1,5 +1,5 @@
-#include "Board.h"
-#include "StringUtils.h"
+#include "model/Board.h"
+#include "io/StringUtils.h"
 #include <cstdlib>
 #include <sstream>
 namespace {

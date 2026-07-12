@@ -1,5 +1,5 @@
 #pragma once
-#include "MovementRule.h"
+#include "rules/MovementRule.h"
 
 class KingMovementRule : public MovementRule {
 public:

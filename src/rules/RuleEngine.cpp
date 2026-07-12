@@ -1,5 +1,5 @@
-#include "MoveLegality.h"
-#include "MovementRuleFactory.h"
+#include "rules/RuleEngine.h"
+#include "rules/MovementRuleFactory.h"
 
 bool isLegalMove(const Board& board, PieceType type, int fromRow, int fromCol, int toRow, int toCol) {
     auto color = board.colorAt(fromRow, fromCol);
