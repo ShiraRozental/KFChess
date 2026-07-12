@@ -1,3 +1,8 @@
+---
+name: iteration-workflow
+description: Use for every development task/iteration in this project (planning, analysis, writing code, testing, committing) — enforces the strict Plan → Analysis → Code → Tests → Commit workflow with mandatory user approval between steps and per-file explanations. Triggers on any request to implement, add, fix, or change code in this repo.
+---
+
 # Working Method — Iteration Workflow
 
 ## How We Work Together
