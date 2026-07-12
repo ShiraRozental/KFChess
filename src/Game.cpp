@@ -4,6 +4,7 @@
 
 namespace {
     constexpr int kCellSizePixels = 100;
+    constexpr long long kMoveDurationMs = 1000;
 
     // Converts a pixel coordinate to a cell index using floor division, so
     // negative pixels (left/above the board) map to negative cell indices
@@ -62,16 +63,37 @@ void Game::handleClick(int pixelX, int pixelY) {
     std::optional<PieceType> movingType = board_.pieceTypeAt(selected_->row, selected_->col);
     if (movingType.has_value() &&
         isLegalMove(board_, *movingType, selected_->row, selected_->col, row, col)) {
-        board_.movePiece(selected_->row, selected_->col, row, col);
+        // The board is not mutated yet: the move only takes effect once its
+        // arrival time is reached (see applyDueMoves). Re-selecting a piece
+        // that already has a pending move is intentionally still allowed
+        // here — nothing yet prevents it, since the rest/cooldown system
+        // that will guard against it is a separate future iteration.
+        pendingMoves_.push_back(PendingMove{
+            selected_->row, selected_->col, row, col, clockMs_ + kMoveDurationMs});
     }
     selected_.reset();
 }
 
-// Adds waiting time to the game clock.
+// Adds waiting time to the game clock, then commits any pending moves whose
+// arrival time has now been reached.
 void Game::handleWait(int ms) {
     clockMs_ += ms;
-    // No delayed/pending moves yet — moves resolve instantly until
-    // Cooldown exists. Hook point for later.
+    applyDueMoves();
+}
+
+// Applies every pending move whose arrival time has passed to the board,
+// and removes it from the pending list. Moves that have not yet arrived
+// are left in place for a later wait to pick up.
+void Game::applyDueMoves() {
+    std::vector<PendingMove> stillPending;
+    for (const PendingMove& move : pendingMoves_) {
+        if (move.arrivalTimeMs <= clockMs_) {
+            board_.movePiece(move.fromRow, move.fromCol, move.toRow, move.toCol);
+        } else {
+            stillPending.push_back(move);
+        }
+    }
+    pendingMoves_ = std::move(stillPending);
 }
 
 // Prints the current board state to the output stream.
