@@ -83,7 +83,7 @@ TEST_CASE("clicking a rook with a clear path captures the enemy piece at the des
     std::ostringstream out;
     game.executeLine("click 50 50", out);
     game.executeLine("click 250 50", out);
-    game.executeLine("wait 1000", out);
+    game.executeLine("wait 2000", out); // 2-cell move: 2 x kMoveDurationPerCellMs
     game.executeLine("print board", out);
     CHECK(out.str() == ". . wR\n");
 }
@@ -95,9 +95,23 @@ TEST_CASE("knight jumps over surrounding pieces to reach its destination") {
     std::ostringstream out;
     game.executeLine("click 50 50", out);
     game.executeLine("click 250 150", out);
-    game.executeLine("wait 1000", out);
+    game.executeLine("wait 2000", out); // Chebyshev distance 2: 2 x kMoveDurationPerCellMs
     game.executeLine("print board", out);
     CHECK(out.str() == ". bP bP\nbP bP wN\n");
+}
+
+TEST_CASE("a two-cell move needs two cells' worth of wait time to arrive") {
+    Game game;
+    std::string error;
+    game.loadBoard("Board:\nwR . .\n", error);
+    std::ostringstream out;
+    game.executeLine("click 50 50", out);
+    game.executeLine("click 250 50", out);
+    game.executeLine("wait 1000", out);
+    game.executeLine("print board", out);
+    game.executeLine("wait 1000", out);
+    game.executeLine("print board", out);
+    CHECK(out.str() == "wR . .\n. . wR\n");
 }
 
 TEST_CASE("a move does not appear on the board before its arrival time") {

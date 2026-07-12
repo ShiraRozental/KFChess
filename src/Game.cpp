@@ -1,10 +1,12 @@
 #include "Game.h"
 #include "MoveLegality.h"
+#include <algorithm>
+#include <cstdlib>
 #include <sstream>
 
 namespace {
     constexpr int kCellSizePixels = 100;
-    constexpr long long kMoveDurationMs = 1000;
+    constexpr long long kMoveDurationPerCellMs = 1000;
 
     // Converts a pixel coordinate to a cell index using floor division, so
     // negative pixels (left/above the board) map to negative cell indices
@@ -12,6 +14,13 @@ namespace {
     int pixelToCell(int pixel) {
         if (pixel >= 0) return pixel / kCellSizePixels;
         return (pixel - (kCellSizePixels - 1)) / kCellSizePixels;
+    }
+
+    // Chebyshev distance (the standard "king move count" metric): straight
+    // and diagonal steps both count as 1 cell of travel, matching how every
+    // piece's shape is defined in terms of row/column deltas.
+    int cellDistance(int fromRow, int fromCol, int toRow, int toCol) {
+        return std::max(std::abs(toRow - fromRow), std::abs(toCol - fromCol));
     }
 }
 
@@ -64,12 +73,16 @@ void Game::handleClick(int pixelX, int pixelY) {
     if (movingType.has_value() &&
         isLegalMove(board_, *movingType, selected_->row, selected_->col, row, col)) {
         // The board is not mutated yet: the move only takes effect once its
-        // arrival time is reached (see applyDueMoves). Re-selecting a piece
-        // that already has a pending move is intentionally still allowed
-        // here — nothing yet prevents it, since the rest/cooldown system
-        // that will guard against it is a separate future iteration.
+        // arrival time is reached (see applyDueMoves). Duration scales with
+        // distance so a longer move takes proportionally longer to arrive.
+        // Re-selecting a piece that already has a pending move is
+        // intentionally still allowed here — nothing yet prevents it, since
+        // the rest/cooldown system that will guard against it is a separate
+        // future iteration.
+        long long duration = cellDistance(selected_->row, selected_->col, row, col)
+            * kMoveDurationPerCellMs;
         pendingMoves_.push_back(PendingMove{
-            selected_->row, selected_->col, row, col, clockMs_ + kMoveDurationMs});
+            selected_->row, selected_->col, row, col, clockMs_ + duration});
     }
     selected_.reset();
 }
