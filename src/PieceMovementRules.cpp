@@ -42,3 +42,19 @@ bool KnightMovementRule::isLegalMove(int fromRow, int fromCol, int toRow, int to
     int dCol = std::abs(toCol - fromCol);
     return (dRow == 1 && dCol == 2) || (dRow == 2 && dCol == 1);
 }
+
+bool WhitePawnMovementRule::isLegalMove(int fromRow, int fromCol, int toRow, int toCol) const {
+    return toCol == fromCol && toRow == fromRow - 1;
+}
+
+bool WhitePawnMovementRule::isLegalCapture(int fromRow, int fromCol, int toRow, int toCol) const {
+    return std::abs(toCol - fromCol) == 1 && toRow == fromRow - 1;
+}
+
+bool BlackPawnMovementRule::isLegalMove(int fromRow, int fromCol, int toRow, int toCol) const {
+    return toCol == fromCol && toRow == fromRow + 1;
+}
+
+bool BlackPawnMovementRule::isLegalCapture(int fromRow, int fromCol, int toRow, int toCol) const {
+    return std::abs(toCol - fromCol) == 1 && toRow == fromRow + 1;
+}

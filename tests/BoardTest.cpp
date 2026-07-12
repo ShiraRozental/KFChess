@@ -86,6 +86,28 @@ TEST_CASE("isSameColor compares piece colors correctly") {
     CHECK_FALSE(board.isSameColor(0, 0, 1, 1));
 }
 
+TEST_CASE("colorAt returns the piece color for occupied cells") {
+    Board board;
+    std::string error;
+    parse("Board:\nwK bR\n. .\n", board, error);
+    CHECK(board.colorAt(0, 0) == PieceColor::White);
+    CHECK(board.colorAt(0, 1) == PieceColor::Black);
+}
+
+TEST_CASE("colorAt returns nullopt for an empty cell") {
+    Board board;
+    std::string error;
+    parse("Board:\nwK .\n. .\n", board, error);
+    CHECK_FALSE(board.colorAt(0, 1).has_value());
+}
+
+TEST_CASE("colorAt returns nullopt for an out-of-bounds cell") {
+    Board board;
+    std::string error;
+    parse("Board:\nwK .\n. .\n", board, error);
+    CHECK_FALSE(board.colorAt(5, 5).has_value());
+}
+
 TEST_CASE("movePiece relocates a piece and clears its source") {
     Board board;
     std::string error;

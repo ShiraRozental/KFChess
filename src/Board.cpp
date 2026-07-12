@@ -32,6 +32,17 @@ namespace {
             default:  return std::nullopt;
         }
     }
+
+    // Maps a token's color letter to its PieceColor. Returns nullopt for an
+    // unrecognized letter (should not happen for tokens that already passed
+    // isValidToken).
+    std::optional<PieceColor> charToPieceColor(char c) {
+        switch (c) {
+            case kWhiteColorSymbol: return PieceColor::White;
+            case kBlackColorSymbol: return PieceColor::Black;
+            default:                return std::nullopt;
+        }
+    }
 }
 
 // Returns true if the token has a valid chess-piece format.
@@ -150,4 +161,11 @@ void Board::rebuildRow(int row) {
 std::optional<PieceType> Board::pieceTypeAt(int row, int col) const {
     if (!inBounds(row, col) || isEmpty(row, col)) return std::nullopt;
     return charToPieceType(grid_[row][col][1]);
+}
+
+// Returns the piece color at a cell, or nullopt if the cell is out of bounds
+// or empty.
+std::optional<PieceColor> Board::colorAt(int row, int col) const {
+    if (!inBounds(row, col) || isEmpty(row, col)) return std::nullopt;
+    return charToPieceColor(grid_[row][col][0]);
 }

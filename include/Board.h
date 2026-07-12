@@ -5,6 +5,7 @@
 #include <istream>
 #include <optional>
 #include "PieceType.h"
+#include "PieceColor.h"
 
 class Board {
 public:
@@ -17,6 +18,7 @@ public:
     bool isPathClear(int fromRow, int fromCol, int toRow, int toCol) const;
     void movePiece(int fromRow, int fromCol, int toRow, int toCol);
     std::optional<PieceType> pieceTypeAt(int row, int col) const;
+    std::optional<PieceColor> colorAt(int row, int col) const;
 
 private:
     static bool isValidToken(const std::string& token);

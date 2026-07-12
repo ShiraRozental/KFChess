@@ -71,3 +71,51 @@ TEST_CASE("a piece can capture an enemy piece at the destination") {
     parse("Board:\nwR . bP\n", board);
     CHECK(legal(board, 0, 0, 0, 2));
 }
+
+TEST_CASE("white pawn moves one cell upward into an empty cell") {
+    Board board;
+    parse("Board:\n. . .\n. wP .\n. . .\n", board);
+    CHECK(legal(board, 1, 1, 0, 1));
+}
+
+TEST_CASE("white pawn cannot move two cells upward") {
+    Board board;
+    parse("Board:\n. . .\n. . .\nwP . .\n", board);
+    CHECK_FALSE(legal(board, 2, 0, 0, 0));
+}
+
+TEST_CASE("black pawn moves one cell downward into an empty cell") {
+    Board board;
+    parse("Board:\n. . .\n. bP .\n. . .\n", board);
+    CHECK(legal(board, 1, 1, 2, 1));
+}
+
+TEST_CASE("white pawn captures an enemy piece diagonally") {
+    Board board;
+    parse("Board:\nbR . .\n. wP .\n. . .\n", board);
+    CHECK(legal(board, 1, 1, 0, 0));
+}
+
+TEST_CASE("black pawn captures an enemy piece diagonally") {
+    Board board;
+    parse("Board:\n. . .\n. bP .\n. . wR\n", board);
+    CHECK(legal(board, 1, 1, 2, 2));
+}
+
+TEST_CASE("white pawn cannot capture an enemy piece directly ahead") {
+    Board board;
+    parse("Board:\n. bR .\n. wP .\n. . .\n", board);
+    CHECK_FALSE(legal(board, 1, 1, 0, 1));
+}
+
+TEST_CASE("white pawn cannot move diagonally into an empty cell") {
+    Board board;
+    parse("Board:\n. . .\n. wP .\n. . .\n", board);
+    CHECK_FALSE(legal(board, 1, 1, 0, 2));
+}
+
+TEST_CASE("pawn cannot capture a piece of its own color diagonally") {
+    Board board;
+    parse("Board:\nwR . .\n. wP .\n. . .\n", board);
+    CHECK_FALSE(legal(board, 1, 1, 0, 0));
+}

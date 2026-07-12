@@ -1,23 +1,14 @@
 #include "MovementRuleFactory.h"
 #include "PieceMovementRules.h"
 
-namespace {
-    // Placeholder for piece types with no movement pattern defined yet
-    // (currently just Pawn). Always rejects the move rather than crashing;
-    // pawn movement is a future iteration.
-    class NullMovementRule : public MovementRule {
-    public:
-        bool isLegalMove(int, int, int, int) const override { return false; }
-    };
-}
-
-const MovementRule& movementRuleFor(PieceType type) {
+const MovementRule& movementRuleFor(PieceType type, PieceColor color) {
     static const KingMovementRule king;
     static const QueenMovementRule queen;
     static const RookMovementRule rook;
     static const BishopMovementRule bishop;
     static const KnightMovementRule knight;
-    static const NullMovementRule none;
+    static const WhitePawnMovementRule whitePawn;
+    static const BlackPawnMovementRule blackPawn;
 
     switch (type) {
         case PieceType::King:   return king;
@@ -25,7 +16,9 @@ const MovementRule& movementRuleFor(PieceType type) {
         case PieceType::Rook:   return rook;
         case PieceType::Bishop: return bishop;
         case PieceType::Knight: return knight;
-        case PieceType::Pawn:   return none;
+        case PieceType::Pawn:
+            if (color == PieceColor::White) return whitePawn;
+            return blackPawn;
     }
-    return none; // unreachable for valid enum values; keeps all paths returning
+    return king; // unreachable for valid enum values; keeps all paths returning
 }
