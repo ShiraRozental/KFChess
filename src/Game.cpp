@@ -52,6 +52,8 @@ void Game::executeLine(const std::string& line, std::ostream& out) {
 
 // Handles a click by selecting or moving a piece based on the clicked cell.
 void Game::handleClick(int pixelX, int pixelY) {
+    if (isGameOver()) return;
+
     int col = pixelToCell(pixelX);
     int row = pixelToCell(pixelY);
 
@@ -87,23 +89,57 @@ void Game::handleClick(int pixelX, int pixelY) {
 // Adds waiting time to the game clock, then commits any pending moves whose
 // arrival time has now been reached.
 void Game::handleWait(int ms) {
+    if (isGameOver()) return;
+
     clockMs_ += ms;
     applyDueMoves();
 }
 
 // Applies every pending move whose arrival time has passed to the board,
 // and removes it from the pending list. Moves that have not yet arrived
-// are left in place for a later wait to pick up.
+// are left in place for a later wait to pick up. If a move captures a
+// king, the game ends immediately and any remaining pending moves are
+// left untouched (queued, never applied).
 void Game::applyDueMoves() {
     std::vector<PendingMove> stillPending;
     for (const PendingMove& move : pendingMoves_) {
-        if (move.arrivalTimeMs <= clockMs_) {
-            board_.movePiece(move.fromRow, move.fromCol, move.toRow, move.toCol);
-        } else {
+        if (isGameOver()) {
             stillPending.push_back(move);
+            continue;
+        }
+        if (move.arrivalTimeMs > clockMs_) {
+            stillPending.push_back(move);
+            continue;
+        }
+
+        std::optional<PieceColor> moverColor = board_.colorAt(move.fromRow, move.fromCol);
+        bool capturesKing = board_.pieceTypeAt(move.toRow, move.toCol) == PieceType::King;
+
+        board_.movePiece(move.fromRow, move.fromCol, move.toRow, move.toCol);
+
+        if (capturesKing && moverColor.has_value()) {
+            gameState_ = winningStateFor(*moverColor);
         }
     }
     pendingMoves_ = std::move(stillPending);
+}
+
+// Returns true once a king has been captured and the game has a winner.
+bool Game::isGameOver() const {
+    return gameState_ != GameState::InProgress;
+}
+
+// Returns the winning color, or nullopt while the game is still in progress.
+std::optional<PieceColor> Game::winner() const {
+    if (gameState_ == GameState::WhiteWins) return PieceColor::White;
+    if (gameState_ == GameState::BlackWins) return PieceColor::Black;
+    return std::nullopt;
+}
+
+// Maps the color of the piece that captured the enemy king to the
+// corresponding game outcome.
+GameState Game::winningStateFor(PieceColor color) {
+    return color == PieceColor::White ? GameState::WhiteWins : GameState::BlackWins;
 }
 
 // Returns true if some piece (of either color) is currently mid-transit

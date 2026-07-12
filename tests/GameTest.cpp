@@ -276,3 +276,60 @@ TEST_CASE("a piece of the same color also cannot move while another piece is mid
     game.executeLine("print board", out);
     CHECK(out.str() == ". . wR\n. . .\nwN . .\n");
 }
+
+TEST_CASE("capturing the enemy king ends the game") {
+    Game game;
+    std::string error;
+    game.loadBoard("Board:\nwR . bK\n", error);
+    std::ostringstream out;
+    game.executeLine("click 50 50", out);   // select wR at (0,0)
+    game.executeLine("click 250 50", out);  // move wR to (0,2): captures bK, 2000ms
+    game.executeLine("wait 2000", out);
+    game.executeLine("print board", out);
+    CHECK(out.str() == ". . wR\n");
+}
+
+TEST_CASE("after the game is over, further click and wait commands are ignored") {
+    Game game;
+    std::string error;
+    game.loadBoard("Board:\nwR . bK\nbR . .\n", error);
+    std::ostringstream out;
+    game.executeLine("click 50 50", out);   // select wR at (0,0)
+    game.executeLine("click 250 50", out);  // move wR to (0,2): captures bK, 2000ms
+    game.executeLine("wait 2000", out);     // game ends here: white wins
+    game.executeLine("click 50 150", out);  // select bR at (1,0): must be ignored
+    game.executeLine("click 150 150", out); // attempt to move bR to (1,1): must be ignored
+    game.executeLine("wait 1000", out);     // must not resolve any move
+    game.executeLine("print board", out);
+    CHECK(out.str() == ". . wR\nbR . .\n");
+}
+
+TEST_CASE("black capturing white's king reports black as the winner") {
+    Game game;
+    std::string error;
+    game.loadBoard("Board:\nbR . wK\n", error);
+    std::ostringstream out;
+    game.executeLine("click 50 50", out);   // select bR at (0,0)
+    game.executeLine("click 250 50", out);  // move bR to (0,2): captures wK, 2000ms
+    game.executeLine("wait 2000", out);
+    CHECK(game.isGameOver());
+    REQUIRE(game.winner().has_value());
+    CHECK(*game.winner() == PieceColor::Black);
+}
+
+TEST_CASE("isGameOver and winner report correctly before and after white wins") {
+    Game game;
+    std::string error;
+    game.loadBoard("Board:\nwR . bK\n", error);
+    std::ostringstream out;
+    CHECK_FALSE(game.isGameOver());
+    CHECK_FALSE(game.winner().has_value());
+
+    game.executeLine("click 50 50", out);
+    game.executeLine("click 250 50", out);
+    game.executeLine("wait 2000", out);
+
+    CHECK(game.isGameOver());
+    REQUIRE(game.winner().has_value());
+    CHECK(*game.winner() == PieceColor::White);
+}

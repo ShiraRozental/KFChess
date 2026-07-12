@@ -4,6 +4,8 @@
 #include <optional>
 #include <vector>
 #include "Board.h"
+#include "GameState.h"
+#include "PieceColor.h"
 
 struct Position {
     int row;
@@ -25,6 +27,8 @@ class Game {
 public:
     bool loadBoard(const std::string& boardText, std::string& errorMessage);
     void executeLine(const std::string& line, std::ostream& out);
+    bool isGameOver() const;
+    std::optional<PieceColor> winner() const;
 
 private:
     void handleClick(int pixelX, int pixelY);
@@ -32,9 +36,11 @@ private:
     void handlePrintBoard(std::ostream& out);
     void applyDueMoves();
     bool isAnyMovePending() const;
+    static GameState winningStateFor(PieceColor color);
 
     Board board_;
     std::optional<Position> selected_;
     long long clockMs_ = 0;
     std::vector<PendingMove> pendingMoves_;
+    GameState gameState_ = GameState::InProgress;
 };
