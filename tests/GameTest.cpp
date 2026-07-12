@@ -400,3 +400,117 @@ TEST_CASE("isGameOver and winner report correctly before and after white wins") 
     REQUIRE(game.winner().has_value());
     CHECK(*game.winner() == PieceColor::White);
 }
+
+TEST_CASE("a jump with nothing arriving lands the piece back on its own square") {
+    Game game;
+    std::string error;
+    game.loadBoard("Board:\n. . .\n. wK .\n. . .\n", error);
+    std::ostringstream out;
+    game.executeLine("jump 150 150", out); // wK at (1,1) jumps in place
+    game.executeLine("wait 1000", out);    // jump duration elapses, no arrival
+    game.executeLine("print board", out);
+    CHECK(out.str() == ". . .\n. wK .\n. . .\n");
+}
+
+TEST_CASE("an airborne piece captures an enemy that arrives at its cell before it lands") {
+    Game game;
+    std::string error;
+    game.loadBoard("Board:\n. . .\nwK bR .\n. . .\n", error);
+    std::ostringstream out;
+    game.executeLine("jump 50 150", out);   // wK at (1,0) jumps, airborne until t=1000
+    game.executeLine("click 150 150", out); // select bR at (1,1)
+    game.executeLine("click 50 150", out);  // bR moves onto wK's cell: distance 1, arrives at t=1000
+    game.executeLine("wait 1000", out);     // move and landing coincide: defense wins the tie
+    game.executeLine("print board", out);
+    CHECK(out.str() == ". . .\nwK . .\n. . .\n");
+}
+
+TEST_CASE("jumping after a capture has already resolved does not undo it") {
+    Game game;
+    std::string error;
+    game.loadBoard("Board:\n. . .\nwK bR .\n. . .\n", error);
+    std::ostringstream out;
+    game.executeLine("click 150 150", out); // select bR at (1,1)
+    game.executeLine("click 50 150", out);  // bR moves onto wK's cell: distance 1, 1000ms
+    game.executeLine("wait 1000", out);     // wK is captured before any jump is attempted
+    game.executeLine("jump 50 150", out);   // too late: wK is already gone
+    game.executeLine("print board", out);
+    CHECK(out.str() == ". . .\nbR . .\n. . .\n");
+}
+
+TEST_CASE("an enemy that arrives after a jump has already landed captures normally") {
+    Game game;
+    std::string error;
+    game.loadBoard("Board:\n. . . .\nwK . . bR\n. . . .\n", error);
+    std::ostringstream out;
+    game.executeLine("jump 50 150", out);   // wK at (1,0) jumps, airborne until t=1000
+    game.executeLine("wait 1000", out);     // jump lands normally, wK unprotected again
+    game.executeLine("click 350 150", out); // select bR at (1,3)
+    game.executeLine("click 50 150", out);  // bR moves onto wK's cell: distance 3, 3000ms
+    game.executeLine("wait 3000", out);     // arrives at t=4000, long after wK landed
+    game.executeLine("print board", out);
+    CHECK(out.str() == ". . . .\nbR . . .\n. . . .\n");
+}
+
+TEST_CASE("a piece that is mid-transit cannot jump") {
+    Game game;
+    std::string error;
+    game.loadBoard("Board:\nwR . .\n", error);
+    std::ostringstream out;
+    game.executeLine("click 50 50", out);   // select wR at (0,0)
+    game.executeLine("click 250 50", out);  // move wR to (0,2): distance 2, 2000ms
+    game.executeLine("wait 500", out);      // wR is still mid-transit
+    game.executeLine("jump 50 50", out);    // blocked: a moving piece cannot jump
+    game.executeLine("wait 1500", out);     // move arrives normally
+    game.executeLine("print board", out);
+    CHECK(out.str() == ". . wR\n");
+}
+
+TEST_CASE("an airborne piece only captures an arriving enemy, not a same-color piece that could never legally move there") {
+    Game game;
+    std::string error;
+    game.loadBoard("Board:\n. . .\nwK wR .\n. . .\n", error);
+    std::ostringstream out;
+    game.executeLine("jump 50 150", out);   // wK at (1,0) jumps
+    game.executeLine("click 150 150", out); // select wR at (1,1), same color as wK
+    game.executeLine("click 50 150", out);  // attempted move onto wK's cell is an illegal same-color capture
+    game.executeLine("wait 1000", out);
+    game.executeLine("print board", out);
+    CHECK(out.str() == ". . .\nwK wR .\n. . .\n");
+}
+
+TEST_CASE("jumping on an empty cell does nothing") {
+    Game game;
+    std::string error;
+    game.loadBoard("Board:\n. . .\nwK . .\n. . .\n", error);
+    std::ostringstream out;
+    game.executeLine("jump 250 150", out); // (1,2) is empty
+    game.executeLine("wait 1000", out);
+    game.executeLine("print board", out);
+    CHECK(out.str() == ". . .\nwK . .\n. . .\n");
+}
+
+TEST_CASE("jumping at an out-of-bounds pixel is ignored") {
+    Game game;
+    std::string error;
+    game.loadBoard("Board:\nwK . .\n", error);
+    std::ostringstream out;
+    game.executeLine("jump -10 50", out);
+    game.executeLine("print board", out);
+    CHECK(out.str() == "wK . .\n");
+}
+
+TEST_CASE("jumping an already-airborne piece is ignored and does not extend its protection") {
+    Game game;
+    std::string error;
+    game.loadBoard("Board:\n. . . .\nwK . . bR\n. . . .\n", error);
+    std::ostringstream out;
+    game.executeLine("jump 50 150", out);   // wK at (1,0) jumps, airborne until t=1000
+    game.executeLine("jump 50 150", out);   // duplicate attempt: ignored, does not reset the timer
+    game.executeLine("wait 1000", out);     // original jump lands normally, wK unprotected again
+    game.executeLine("click 350 150", out); // select bR at (1,3)
+    game.executeLine("click 50 150", out);  // bR moves onto wK's cell: distance 3, 3000ms
+    game.executeLine("wait 3000", out);     // arrives at t=4000, well after wK's original window
+    game.executeLine("print board", out);
+    CHECK(out.str() == ". . . .\nbR . . .\n. . . .\n");
+}

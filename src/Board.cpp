@@ -164,6 +164,15 @@ void Board::movePiece(int fromRow, int fromCol, int toRow, int toCol) {
     rebuildRow(toRow);
 }
 
+// Removes the piece at a cell, leaving it empty. Unlike movePiece, this does
+// not touch any other cell — used when a piece is captured mid-transit
+// without ever reaching its destination (e.g. an airborne jump defender).
+void Board::removePiece(int row, int col) {
+    if (!inBounds(row, col)) return;
+    grid_[row][col] = ".";
+    rebuildRow(row);
+}
+
 // Rebuilds the text row from the current grid values.
 void Board::rebuildRow(int row) {
     rows_[row] = joinTokens(grid_[row]);

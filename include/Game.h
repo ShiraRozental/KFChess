@@ -24,6 +24,16 @@ struct PendingMove {
     long long arrivalTimeMs;
 };
 
+// A piece that jumped in place and is airborne until endTimeMs. While
+// airborne it stays on (row, col): it never moves, but if an enemy's
+// pending move arrives at this same cell before it lands, it captures that
+// enemy instead of being captured (see Game::applyDueMoves).
+struct PendingJump {
+    int row;
+    int col;
+    long long endTimeMs;
+};
+
 class Game {
 public:
     bool loadBoard(const std::string& boardText, std::string& errorMessage);
@@ -34,15 +44,20 @@ public:
 private:
     void handleClick(int pixelX, int pixelY);
     void handleWait(int ms);
+    void handleJump(int pixelX, int pixelY);
     void handlePrintBoard(std::ostream& out);
     void applyDueMoves();
+    void applyDueJumps();
     void promoteIfNeeded(int row, int col, PieceType type, PieceColor color);
     bool isAnyMovePending() const;
+    bool isPieceMoving(int row, int col) const;
+    bool isPieceAirborne(int row, int col) const;
     static GameState winningStateFor(PieceColor color);
 
     Board board_;
     std::optional<Position> selected_;
     long long clockMs_ = 0;
     std::vector<PendingMove> pendingMoves_;
+    std::vector<PendingJump> pendingJumps_;
     GameState gameState_ = GameState::InProgress;
 };
