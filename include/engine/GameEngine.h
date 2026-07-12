@@ -7,11 +7,7 @@
 #include "model/GameState.h"
 #include "model/PieceColor.h"
 #include "model/PieceType.h"
-
-struct Position {
-    int row;
-    int col;
-};
+#include "model/Position.h"
 
 // A move that has been accepted (legality already checked at click time) but
 // has not yet reached its destination. The board itself is not mutated until
