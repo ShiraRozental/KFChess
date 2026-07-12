@@ -71,14 +71,11 @@ void Game::handleClick(int pixelX, int pixelY) {
 
     std::optional<PieceType> movingType = board_.pieceTypeAt(selected_->row, selected_->col);
     if (movingType.has_value() &&
+        !isAnyMovePending() &&
         isLegalMove(board_, *movingType, selected_->row, selected_->col, row, col)) {
         // The board is not mutated yet: the move only takes effect once its
         // arrival time is reached (see applyDueMoves). Duration scales with
         // distance so a longer move takes proportionally longer to arrive.
-        // Re-selecting a piece that already has a pending move is
-        // intentionally still allowed here — nothing yet prevents it, since
-        // the rest/cooldown system that will guard against it is a separate
-        // future iteration.
         long long duration = cellDistance(selected_->row, selected_->col, row, col)
             * kMoveDurationPerCellMs;
         pendingMoves_.push_back(PendingMove{
@@ -107,6 +104,13 @@ void Game::applyDueMoves() {
         }
     }
     pendingMoves_ = std::move(stillPending);
+}
+
+// Returns true if some piece (of either color) is currently mid-transit
+// toward a pending destination. Only one move may be in flight on the board
+// at a time: no new move can be scheduled until the current one arrives.
+bool Game::isAnyMovePending() const {
+    return !pendingMoves_.empty();
 }
 
 // Prints the current board state to the output stream.

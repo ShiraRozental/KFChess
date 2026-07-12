@@ -31,6 +31,7 @@ private:
     void handleWait(int ms);
     void handlePrintBoard(std::ostream& out);
     void applyDueMoves();
+    bool isAnyMovePending() const;
 
     Board board_;
     std::optional<Position> selected_;
