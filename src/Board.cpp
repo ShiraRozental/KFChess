@@ -1,5 +1,6 @@
 #include "Board.h"
 #include "StringUtils.h"
+#include <cstdlib>
 #include <sstream>
 namespace {
     // Joins tokens with a single space to produce the canonical row text.
@@ -103,6 +104,31 @@ bool Board::isEmpty(int row, int col) const {
 bool Board::isSameColor(int row1, int col1, int row2, int col2) const {
     if (isEmpty(row1, col1) || isEmpty(row2, col2)) return false;
     return grid_[row1][col1][0] == grid_[row2][col2][0];
+}
+
+// Checks whether every cell strictly between two straight- or diagonally-
+// aligned cells is empty. Used to block sliding pieces (rook/bishop/queen)
+// from moving through other pieces. For deltas that are neither straight nor
+// diagonal (e.g. a knight's shape), there is no well-defined path to check,
+// so this returns true vacuously — callers only invoke it after the shape
+// has already been validated as straight/diagonal.
+bool Board::isPathClear(int fromRow, int fromCol, int toRow, int toCol) const {
+    int dRow = toRow - fromRow;
+    int dCol = toCol - fromCol;
+    bool isStraightOrDiagonal = (dRow == 0 || dCol == 0 || std::abs(dRow) == std::abs(dCol));
+    if (!isStraightOrDiagonal) return true;
+
+    int stepRow = (dRow > 0) - (dRow < 0);
+    int stepCol = (dCol > 0) - (dCol < 0);
+
+    int row = fromRow + stepRow;
+    int col = fromCol + stepCol;
+    while (row != toRow || col != toCol) {
+        if (!isEmpty(row, col)) return false;
+        row += stepRow;
+        col += stepCol;
+    }
+    return true;
 }
 
 // Moves a piece from one cell to another and rebuilds the affected rows.

@@ -14,6 +14,7 @@ public:
     bool inBounds(int row, int col) const;
     bool isEmpty(int row, int col) const;
     bool isSameColor(int row1, int col1, int row2, int col2) const;
+    bool isPathClear(int fromRow, int fromCol, int toRow, int toCol) const;
     void movePiece(int fromRow, int fromCol, int toRow, int toCol);
     std::optional<PieceType> pieceTypeAt(int row, int col) const;
 

@@ -103,3 +103,45 @@ TEST_CASE("movePiece ignores out-of-bounds requests") {
     board.movePiece(0, 0, 5, 5);
     CHECK_FALSE(board.isEmpty(0, 0));
 }
+
+TEST_CASE("isPathClear is true for a horizontal path with nothing in between") {
+    Board board;
+    std::string error;
+    parse("Board:\nwR . .\n", board, error);
+    CHECK(board.isPathClear(0, 0, 0, 2));
+}
+
+TEST_CASE("isPathClear is false when a piece blocks a horizontal path") {
+    Board board;
+    std::string error;
+    parse("Board:\nwR bP .\n", board, error);
+    CHECK_FALSE(board.isPathClear(0, 0, 0, 2));
+}
+
+TEST_CASE("isPathClear is true for a diagonal path with nothing in between") {
+    Board board;
+    std::string error;
+    parse("Board:\nwB . .\n. . .\n. . wR\n", board, error);
+    CHECK(board.isPathClear(0, 0, 2, 2));
+}
+
+TEST_CASE("isPathClear is false when a piece blocks a diagonal path") {
+    Board board;
+    std::string error;
+    parse("Board:\nwB . .\n. bP .\n. . wR\n", board, error);
+    CHECK_FALSE(board.isPathClear(0, 0, 2, 2));
+}
+
+TEST_CASE("isPathClear is true for adjacent cells with no cells in between") {
+    Board board;
+    std::string error;
+    parse("Board:\nwR bP\n", board, error);
+    CHECK(board.isPathClear(0, 0, 0, 1));
+}
+
+TEST_CASE("isPathClear is vacuously true for a non-straight non-diagonal delta") {
+    Board board;
+    std::string error;
+    parse("Board:\nwN bP bP\nbP bP bP\n. . .\n", board, error);
+    CHECK(board.isPathClear(0, 0, 1, 2));
+}

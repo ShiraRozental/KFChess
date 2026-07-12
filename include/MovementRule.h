@@ -8,4 +8,10 @@ class MovementRule {
 public:
     virtual ~MovementRule() = default;
     virtual bool isLegalMove(int fromRow, int fromCol, int toRow, int toCol) const = 0;
+
+    // Whether this piece's movement is blocked by other pieces standing on
+    // the straight/diagonal line between source and destination (rook,
+    // bishop, queen). Pieces that move without regard to what's in between
+    // (king, knight) keep the default of false.
+    virtual bool requiresClearPath() const { return false; }
 };

@@ -62,3 +62,36 @@ TEST_CASE("loadBoard surfaces parsing errors") {
     CHECK_FALSE(game.loadBoard("Board:\nwK xZ\n", error));
     CHECK(error == "ERROR UNKNOWN_TOKEN");
 }
+
+TEST_CASE("clicking a rook blocked by a piece in its path does not move it") {
+    Game game;
+    std::string error;
+    game.loadBoard("Board:\nwR bP .\n", error);
+    std::ostringstream out;
+    game.executeLine("click 50 50", out);
+    game.executeLine("click 250 50", out);
+    game.executeLine("print board", out);
+    CHECK(out.str() == "wR bP .\n");
+}
+
+TEST_CASE("clicking a rook with a clear path captures the enemy piece at the destination") {
+    Game game;
+    std::string error;
+    game.loadBoard("Board:\nwR . bP\n", error);
+    std::ostringstream out;
+    game.executeLine("click 50 50", out);
+    game.executeLine("click 250 50", out);
+    game.executeLine("print board", out);
+    CHECK(out.str() == ". . wR\n");
+}
+
+TEST_CASE("knight jumps over surrounding pieces to reach its destination") {
+    Game game;
+    std::string error;
+    game.loadBoard("Board:\nwN bP bP\nbP bP .\n", error);
+    std::ostringstream out;
+    game.executeLine("click 50 50", out);
+    game.executeLine("click 250 150", out);
+    game.executeLine("print board", out);
+    CHECK(out.str() == ". bP bP\nbP bP wN\n");
+}
