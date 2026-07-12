@@ -78,9 +78,9 @@ TEST_CASE("white pawn moves one cell upward into an empty cell") {
     CHECK(legal(board, 1, 1, 0, 1));
 }
 
-TEST_CASE("white pawn cannot move two cells upward") {
+TEST_CASE("white pawn cannot move two cells upward from a non-start row") {
     Board board;
-    parse("Board:\n. . .\n. . .\nwP . .\n", board);
+    parse("Board:\n. . .\n. . .\nwP . .\n. . .\n", board);
     CHECK_FALSE(legal(board, 2, 0, 0, 0));
 }
 
@@ -118,4 +118,34 @@ TEST_CASE("pawn cannot capture a piece of its own color diagonally") {
     Board board;
     parse("Board:\nwR . .\n. wP .\n. . .\n", board);
     CHECK_FALSE(legal(board, 1, 1, 0, 0));
+}
+
+TEST_CASE("white pawn can advance two cells from its start row with a clear path") {
+    Board board;
+    parse("Board:\n. . .\n. . .\n. . .\nwP . .\n", board);
+    CHECK(legal(board, 3, 0, 1, 0));
+}
+
+TEST_CASE("white pawn cannot advance two cells when the path is blocked") {
+    Board board;
+    parse("Board:\n. . .\n. . .\nwR . .\nwP . .\n", board);
+    CHECK_FALSE(legal(board, 3, 0, 1, 0));
+}
+
+TEST_CASE("white pawn cannot advance two cells onto an occupied destination") {
+    Board board;
+    parse("Board:\n. . .\nbR . .\n. . .\nwP . .\n", board);
+    CHECK_FALSE(legal(board, 3, 0, 1, 0));
+}
+
+TEST_CASE("white pawn cannot advance two cells from a row that is not its start row") {
+    Board board;
+    parse("Board:\n. . .\n. . .\nwP . .\n. . .\n. . .\n", board);
+    CHECK_FALSE(legal(board, 2, 0, 0, 0));
+}
+
+TEST_CASE("black pawn can advance two cells from its start row") {
+    Board board;
+    parse("Board:\nbP . .\n. . .\n. . .\n. . .\n", board);
+    CHECK(legal(board, 0, 0, 2, 0));
 }

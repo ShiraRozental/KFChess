@@ -17,8 +17,10 @@ public:
     bool isSameColor(int row1, int col1, int row2, int col2) const;
     bool isPathClear(int fromRow, int fromCol, int toRow, int toCol) const;
     void movePiece(int fromRow, int fromCol, int toRow, int toCol);
+    void setPieceType(int row, int col, PieceType type);
     std::optional<PieceType> pieceTypeAt(int row, int col) const;
     std::optional<PieceColor> colorAt(int row, int col) const;
+    int rowCount() const;
 
 private:
     static bool isValidToken(const std::string& token);

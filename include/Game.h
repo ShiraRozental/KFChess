@@ -6,6 +6,7 @@
 #include "Board.h"
 #include "GameState.h"
 #include "PieceColor.h"
+#include "PieceType.h"
 
 struct Position {
     int row;
@@ -35,6 +36,7 @@ private:
     void handleWait(int ms);
     void handlePrintBoard(std::ostream& out);
     void applyDueMoves();
+    void promoteIfNeeded(int row, int col, PieceType type, PieceColor color);
     bool isAnyMovePending() const;
     static GameState winningStateFor(PieceColor color);
 

@@ -1,5 +1,6 @@
 #include "Game.h"
 #include "MoveLegality.h"
+#include "MovementRuleFactory.h"
 #include <algorithm>
 #include <cstdlib>
 #include <sstream>
@@ -113,6 +114,7 @@ void Game::applyDueMoves() {
         }
 
         std::optional<PieceColor> moverColor = board_.colorAt(move.fromRow, move.fromCol);
+        std::optional<PieceType> movedType = board_.pieceTypeAt(move.fromRow, move.fromCol);
         bool capturesKing = board_.pieceTypeAt(move.toRow, move.toCol) == PieceType::King;
 
         board_.movePiece(move.fromRow, move.fromCol, move.toRow, move.toCol);
@@ -120,8 +122,24 @@ void Game::applyDueMoves() {
         if (capturesKing && moverColor.has_value()) {
             gameState_ = winningStateFor(*moverColor);
         }
+
+        if (movedType.has_value() && moverColor.has_value()) {
+            promoteIfNeeded(move.toRow, move.toCol, *movedType, *moverColor);
+        }
     }
     pendingMoves_ = std::move(stillPending);
+}
+
+// Promotes the piece now sitting at (row, col) to a queen if its movement
+// rule reports that this row is far enough to promote (only pawns do).
+// Piece type and color must be the ones the piece had before this move, so
+// promotion is decided by the rule that actually made the move, not by
+// whatever ends up on the board.
+void Game::promoteIfNeeded(int row, int col, PieceType type, PieceColor color) {
+    const MovementRule& rule = movementRuleFor(type, color);
+    if (rule.reachesPromotionRow(row, board_.rowCount())) {
+        board_.setPieceType(row, col, PieceType::Queen);
+    }
 }
 
 // Returns true once a king has been captured and the game has a winner.

@@ -167,3 +167,36 @@ TEST_CASE("isPathClear is vacuously true for a non-straight non-diagonal delta")
     parse("Board:\nwN bP bP\nbP bP bP\n. . .\n", board, error);
     CHECK(board.isPathClear(0, 0, 1, 2));
 }
+
+TEST_CASE("rowCount returns the number of rows in the parsed board") {
+    Board board;
+    std::string error;
+    parse("Board:\nwK . .\n. . .\n. . .\n", board, error);
+    CHECK(board.rowCount() == 3);
+}
+
+TEST_CASE("setPieceType changes the piece type while preserving color") {
+    Board board;
+    std::string error;
+    parse("Board:\nwP .\n. .\n", board, error);
+    board.setPieceType(0, 0, PieceType::Queen);
+    CHECK(board.pieceTypeAt(0, 0) == PieceType::Queen);
+    CHECK(board.colorAt(0, 0) == PieceColor::White);
+    CHECK(printed(board) == "wQ .\n. .");
+}
+
+TEST_CASE("setPieceType does nothing on an empty cell") {
+    Board board;
+    std::string error;
+    parse("Board:\n. .\n. .\n", board, error);
+    board.setPieceType(0, 0, PieceType::Queen);
+    CHECK(board.isEmpty(0, 0));
+}
+
+TEST_CASE("setPieceType does nothing for an out-of-bounds cell") {
+    Board board;
+    std::string error;
+    parse("Board:\nwP .\n. .\n", board, error);
+    board.setPieceType(5, 5, PieceType::Queen);
+    CHECK(board.pieceTypeAt(0, 0) == PieceType::Pawn);
+}

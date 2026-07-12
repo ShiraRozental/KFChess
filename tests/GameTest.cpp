@@ -317,6 +317,73 @@ TEST_CASE("black capturing white's king reports black as the winner") {
     CHECK(*game.winner() == PieceColor::Black);
 }
 
+TEST_CASE("a pawn can move two cells from its start row and takes proportionally longer to arrive") {
+    Game game;
+    std::string error;
+    // 5 rows: the start row is the bottom edge (row 4), and the destination
+    // row 2 is not the promotion row, so this test isolates movement/timing
+    // from the separate promotion behavior.
+    game.loadBoard("Board:\n. . .\n. . .\n. . .\n. . .\nwP . .\n", error);
+    std::ostringstream out;
+    game.executeLine("click 50 450", out); // select wP at (4,0), its start row
+    game.executeLine("click 50 250", out); // move to (2,0): Chebyshev distance 2, 2000ms
+    game.executeLine("wait 1000", out);    // half the duration: not yet arrived
+    game.executeLine("print board", out);
+    game.executeLine("wait 1000", out);    // now the move fully arrives
+    game.executeLine("print board", out);
+    CHECK(out.str() ==
+        ". . .\n. . .\n. . .\n. . .\nwP . .\n"
+        ". . .\n. . .\nwP . .\n. . .\n. . .\n");
+}
+
+TEST_CASE("a pawn cannot move two cells from a row that is not its start row") {
+    Game game;
+    std::string error;
+    game.loadBoard("Board:\n. . .\n. . .\nwP . .\n. . .\n", error);
+    std::ostringstream out;
+    game.executeLine("click 50 250", out); // select wP at (2,0): start row is (3), not (2)
+    game.executeLine("click 50 50", out);  // attempt move to (0,0): illegal, no pending move
+    game.executeLine("wait 5000", out);
+    game.executeLine("print board", out);
+    CHECK(out.str() == ". . .\n. . .\nwP . .\n. . .\n");
+}
+
+TEST_CASE("a white pawn becomes a queen when it reaches the last row") {
+    Game game;
+    std::string error;
+    game.loadBoard("Board:\n. . .\nwP . .\n", error);
+    std::ostringstream out;
+    game.executeLine("click 50 150", out); // select wP at (1,0)
+    game.executeLine("click 50 50", out);  // move to (0,0): its promotion row, 1000ms
+    game.executeLine("wait 1000", out);
+    game.executeLine("print board", out);
+    CHECK(out.str() == "wQ . .\n. . .\n");
+}
+
+TEST_CASE("a black pawn becomes a queen when it reaches the last row") {
+    Game game;
+    std::string error;
+    game.loadBoard("Board:\nbP . .\n. . .\n", error);
+    std::ostringstream out;
+    game.executeLine("click 50 50", out);   // select bP at (0,0)
+    game.executeLine("click 50 150", out);  // move to (1,0): its promotion row, 1000ms
+    game.executeLine("wait 1000", out);
+    game.executeLine("print board", out);
+    CHECK(out.str() == ". . .\nbQ . .\n");
+}
+
+TEST_CASE("a pawn that captures diagonally into the last row also becomes a queen") {
+    Game game;
+    std::string error;
+    game.loadBoard("Board:\nbR . .\n. wP .\n", error);
+    std::ostringstream out;
+    game.executeLine("click 150 150", out); // select wP at (1,1)
+    game.executeLine("click 50 50", out);   // capture bR at (0,0): its promotion row, 1000ms
+    game.executeLine("wait 1000", out);
+    game.executeLine("print board", out);
+    CHECK(out.str() == "wQ . .\n. . .\n");
+}
+
 TEST_CASE("isGameOver and winner report correctly before and after white wins") {
     Game game;
     std::string error;

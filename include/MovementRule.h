@@ -22,4 +22,19 @@ public:
     // bishop, queen). Pieces that move without regard to what's in between
     // (king, knight) keep the default of false.
     virtual bool requiresClearPath() const { return false; }
+
+    // Geometric shape legality for a two-cell opening advance (only the
+    // pawn's first move from its home row can be this shape). boardHeight is
+    // needed to locate that home row on boards of arbitrary size. Every
+    // piece other than the pawn keeps the default of false.
+    virtual bool isLegalDoubleMove(int fromRow, int fromCol, int toRow, int toCol, int boardHeight) const {
+        return false;
+    }
+
+    // Whether landing on this row (given the board's total row count) is far
+    // enough for this piece to be promoted. Only the pawn overrides this;
+    // every other piece keeps the default of false.
+    virtual bool reachesPromotionRow(int row, int boardHeight) const {
+        return false;
+    }
 };

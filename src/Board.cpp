@@ -43,6 +43,19 @@ namespace {
             default:                return std::nullopt;
         }
     }
+
+    // Maps a PieceType to its token letter. Inverse of charToPieceType.
+    char pieceTypeToChar(PieceType type) {
+        switch (type) {
+            case PieceType::King:   return 'K';
+            case PieceType::Queen:  return 'Q';
+            case PieceType::Rook:   return 'R';
+            case PieceType::Bishop: return 'B';
+            case PieceType::Knight: return 'N';
+            case PieceType::Pawn:   return 'P';
+        }
+        return 'Q'; // unreachable for valid enum values; keeps all paths returning
+    }
 }
 
 // Returns true if the token has a valid chess-piece format.
@@ -154,6 +167,19 @@ void Board::movePiece(int fromRow, int fromCol, int toRow, int toCol) {
 // Rebuilds the text row from the current grid values.
 void Board::rebuildRow(int row) {
     rows_[row] = joinTokens(grid_[row]);
+}
+
+// Changes the piece type at a cell while preserving its color (e.g. pawn
+// promotion). Does nothing for an out-of-bounds or empty cell.
+void Board::setPieceType(int row, int col, PieceType type) {
+    if (!inBounds(row, col) || isEmpty(row, col)) return;
+    grid_[row][col][1] = pieceTypeToChar(type);
+    rebuildRow(row);
+}
+
+// Returns the number of rows in the parsed board.
+int Board::rowCount() const {
+    return (int)grid_.size();
 }
 
 // Returns the piece type at a cell, or nullopt if the cell is out of bounds
