@@ -1,4 +1,5 @@
 #include "doctest/doctest.h"
+#include "io/BoardTextFormat.h"
 #include "rules/RuleEngine.h"
 #include <sstream>
 
@@ -6,15 +7,13 @@ namespace {
     bool parse(const std::string& text, Board& board) {
         std::istringstream in(text);
         std::string error;
-        return Board::fromStream(in, board, error);
+        return BoardTextFormat::parse(in, board, error);
     }
 
-    // Looks up the piece type at (fromRow, fromCol) and checks legality of
-    // moving it to (toRow, toCol), mirroring how Game uses this API.
+    // Mirrors how GameEngine uses this API: the moving piece's type and
+    // color are read from the board itself, not passed in separately.
     bool legal(const Board& board, int fromRow, int fromCol, int toRow, int toCol) {
-        auto type = board.pieceTypeAt(fromRow, fromCol);
-        REQUIRE(type.has_value());
-        return isLegalMove(board, *type, fromRow, fromCol, toRow, toCol);
+        return isLegalMove(board, fromRow, fromCol, toRow, toCol);
     }
 }
 

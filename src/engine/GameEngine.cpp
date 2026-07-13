@@ -1,4 +1,6 @@
 #include "engine/GameEngine.h"
+#include "io/BoardTextFormat.h"
+#include "model/Piece.h"
 #include "rules/RuleEngine.h"
 #include "rules/MovementRuleFactory.h"
 #include <algorithm>
@@ -29,7 +31,7 @@ namespace {
 // Loads a board description into the game object.
 bool GameEngine::loadBoard(const std::string& boardText, std::string& errorMessage) {
     std::istringstream in(boardText);
-    return Board::fromStream(in, board_, errorMessage);
+    return BoardTextFormat::parse(in, board_, errorMessage);
 }
 
 // Executes a single command line based on its keyword.
@@ -76,10 +78,8 @@ void GameEngine::handleClick(int pixelX, int pixelY) {
         return;
     }
 
-    std::optional<PieceType> movingType = board_.pieceTypeAt(selected_->row, selected_->col);
-    if (movingType.has_value() &&
-        !isAnyMovePending() &&
-        isLegalMove(board_, *movingType, selected_->row, selected_->col, row, col)) {
+    if (!isAnyMovePending() &&
+        isLegalMove(board_, selected_->row, selected_->col, row, col)) {
         // The board is not mutated yet: the move only takes effect once its
         // arrival time is reached (see applyDueMoves). Duration scales with
         // distance so a longer move takes proportionally longer to arrive.
@@ -148,19 +148,23 @@ void GameEngine::applyDueMoves() {
             continue;
         }
 
-        std::optional<PieceColor> moverColor = board_.colorAt(move.fromRow, move.fromCol);
-        std::optional<PieceType> movedType = board_.pieceTypeAt(move.fromRow, move.fromCol);
-        bool capturesKing = board_.pieceTypeAt(move.toRow, move.toCol) == PieceType::King;
+        // Guaranteed non-null: a pending move is only ever scheduled for a
+        // cell that held a piece (see handleClick), and only one move may
+        // be in flight at a time (see isAnyMovePending), so nothing else
+        // can have vacated this cell before it arrives here.
+        const Piece* mover = board_.pieceAt(move.fromRow, move.fromCol);
+        const Piece* target = board_.pieceAt(move.toRow, move.toCol);
+        bool capturesKing = target && target->kind() == PieceType::King;
+        PieceColor moverColor = mover->color();
+        PieceType movedType = mover->kind();
 
         board_.movePiece(move.fromRow, move.fromCol, move.toRow, move.toCol);
 
-        if (capturesKing && moverColor.has_value()) {
-            gameState_ = winningStateFor(*moverColor);
+        if (capturesKing) {
+            gameState_ = winningStateFor(moverColor);
         }
 
-        if (movedType.has_value() && moverColor.has_value()) {
-            promoteIfNeeded(move.toRow, move.toCol, *movedType, *moverColor);
-        }
+        promoteIfNeeded(move.toRow, move.toCol, movedType, moverColor);
     }
     pendingMoves_ = std::move(stillPending);
 }
@@ -185,7 +189,7 @@ void GameEngine::applyDueJumps() {
 void GameEngine::promoteIfNeeded(int row, int col, PieceType type, PieceColor color) {
     const MovementRule& rule = movementRuleFor(type, color);
     if (rule.reachesPromotionRow(row, board_.rowCount())) {
-        board_.setPieceType(row, col, PieceType::Queen);
+        board_.promote(row, col, PieceType::Queen);
     }
 }
 
@@ -234,6 +238,6 @@ bool GameEngine::isPieceAirborne(int row, int col) const {
 
 // Prints the current board state to the output stream.
 void GameEngine::handlePrintBoard(std::ostream& out) {
-    board_.print(out);
+    BoardTextFormat::write(board_, out);
     out << "\n";
 }

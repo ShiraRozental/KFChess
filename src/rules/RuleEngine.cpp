@@ -1,11 +1,11 @@
 #include "rules/RuleEngine.h"
 #include "rules/MovementRuleFactory.h"
 
-bool isLegalMove(const Board& board, PieceType type, int fromRow, int fromCol, int toRow, int toCol) {
-    auto color = board.colorAt(fromRow, fromCol);
-    if (!color.has_value()) return false;
+bool isLegalMove(const Board& board, int fromRow, int fromCol, int toRow, int toCol) {
+    const Piece* mover = board.pieceAt(fromRow, fromCol);
+    if (!mover) return false;
 
-    const MovementRule& rule = movementRuleFor(type, *color);
+    const MovementRule& rule = movementRuleFor(mover->kind(), mover->color());
     bool isCapture = !board.isEmpty(toRow, toCol);
     bool isDoubleMove = !isCapture &&
         !rule.isLegalMove(fromRow, fromCol, toRow, toCol) &&
