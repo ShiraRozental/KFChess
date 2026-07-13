@@ -13,7 +13,7 @@ namespace {
     // Mirrors how GameEngine uses this API: the moving piece's type and
     // color are read from the board itself, not passed in separately.
     bool legal(const Board& board, int fromRow, int fromCol, int toRow, int toCol) {
-        return isLegalMove(board, fromRow, fromCol, toRow, toCol);
+        return validateMove(board, fromRow, fromCol, toRow, toCol).legal;
     }
 }
 
@@ -147,4 +147,44 @@ TEST_CASE("black pawn can advance two cells from its start row") {
     Board board;
     parse("Board:\nbP . .\n. . .\n. . .\n. . .\n", board);
     CHECK(legal(board, 0, 0, 2, 0));
+}
+
+TEST_CASE("a legal move reports the ok reason") {
+    Board board;
+    parse("Board:\nwR . .\n", board);
+    MoveValidation result = validateMove(board, 0, 0, 0, 2);
+    CHECK(result.legal);
+    CHECK(result.reason == MoveRejectionReason::Ok);
+}
+
+TEST_CASE("a move from an empty cell reports the no-piece-at-source reason") {
+    Board board;
+    parse("Board:\n. . .\n", board);
+    MoveValidation result = validateMove(board, 0, 0, 0, 1);
+    CHECK_FALSE(result.legal);
+    CHECK(result.reason == MoveRejectionReason::NoPieceAtSource);
+}
+
+TEST_CASE("a geometrically illegal move reports the illegal-shape reason") {
+    Board board;
+    parse("Board:\nwR . .\n. . .\n. . .\n", board);
+    MoveValidation result = validateMove(board, 0, 0, 2, 2);
+    CHECK_FALSE(result.legal);
+    CHECK(result.reason == MoveRejectionReason::IllegalShape);
+}
+
+TEST_CASE("a move blocked by a piece in the path reports the path-blocked reason") {
+    Board board;
+    parse("Board:\nwR bP .\n", board);
+    MoveValidation result = validateMove(board, 0, 0, 0, 2);
+    CHECK_FALSE(result.legal);
+    CHECK(result.reason == MoveRejectionReason::PathBlocked);
+}
+
+TEST_CASE("a move onto a friendly piece reports the destination-occupied-by-own-piece reason") {
+    Board board;
+    parse("Board:\nwR . wP\n", board);
+    MoveValidation result = validateMove(board, 0, 0, 0, 2);
+    CHECK_FALSE(result.legal);
+    CHECK(result.reason == MoveRejectionReason::DestinationOccupiedByOwnPiece);
 }
