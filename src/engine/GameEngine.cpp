@@ -79,7 +79,7 @@ void GameEngine::handleClick(int pixelX, int pixelY) {
     }
 
     if (!isAnyMovePending() &&
-        validateMove(board_, selected_->row, selected_->col, row, col).legal) {
+        validateMove(board_, selected_->row, selected_->col, row, col).is_valid) {
         // The board is not mutated yet: the move only takes effect once its
         // arrival time is reached (see applyDueMoves). Duration scales with
         // distance so a longer move takes proportionally longer to arrive.

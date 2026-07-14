@@ -13,7 +13,7 @@ namespace {
     // Mirrors how GameEngine uses this API: the moving piece's type and
     // color are read from the board itself, not passed in separately.
     bool legal(const Board& board, int fromRow, int fromCol, int toRow, int toCol) {
-        return validateMove(board, fromRow, fromCol, toRow, toCol).legal;
+        return validateMove(board, fromRow, fromCol, toRow, toCol).is_valid;
     }
 }
 
@@ -153,38 +153,54 @@ TEST_CASE("a legal move reports the ok reason") {
     Board board;
     parse("Board:\nwR . .\n", board);
     MoveValidation result = validateMove(board, 0, 0, 0, 2);
-    CHECK(result.legal);
+    CHECK(result.is_valid);
     CHECK(result.reason == MoveRejectionReason::Ok);
 }
 
-TEST_CASE("a move from an empty cell reports the no-piece-at-source reason") {
+TEST_CASE("a move from an empty cell reports the empty-source reason") {
     Board board;
     parse("Board:\n. . .\n", board);
     MoveValidation result = validateMove(board, 0, 0, 0, 1);
-    CHECK_FALSE(result.legal);
-    CHECK(result.reason == MoveRejectionReason::NoPieceAtSource);
+    CHECK_FALSE(result.is_valid);
+    CHECK(result.reason == MoveRejectionReason::EmptySource);
 }
 
-TEST_CASE("a geometrically illegal move reports the illegal-shape reason") {
+TEST_CASE("a geometrically illegal move reports the illegal-piece-move reason") {
     Board board;
     parse("Board:\nwR . .\n. . .\n. . .\n", board);
     MoveValidation result = validateMove(board, 0, 0, 2, 2);
-    CHECK_FALSE(result.legal);
-    CHECK(result.reason == MoveRejectionReason::IllegalShape);
+    CHECK_FALSE(result.is_valid);
+    CHECK(result.reason == MoveRejectionReason::IllegalPieceMove);
 }
 
-TEST_CASE("a move blocked by a piece in the path reports the path-blocked reason") {
+TEST_CASE("a move blocked by a piece in the path reports the illegal-piece-move reason") {
     Board board;
     parse("Board:\nwR bP .\n", board);
     MoveValidation result = validateMove(board, 0, 0, 0, 2);
-    CHECK_FALSE(result.legal);
-    CHECK(result.reason == MoveRejectionReason::PathBlocked);
+    CHECK_FALSE(result.is_valid);
+    CHECK(result.reason == MoveRejectionReason::IllegalPieceMove);
 }
 
-TEST_CASE("a move onto a friendly piece reports the destination-occupied-by-own-piece reason") {
+TEST_CASE("a move onto a friendly piece reports the friendly-destination reason") {
     Board board;
     parse("Board:\nwR . wP\n", board);
     MoveValidation result = validateMove(board, 0, 0, 0, 2);
-    CHECK_FALSE(result.legal);
-    CHECK(result.reason == MoveRejectionReason::DestinationOccupiedByOwnPiece);
+    CHECK_FALSE(result.is_valid);
+    CHECK(result.reason == MoveRejectionReason::FriendlyDestination);
+}
+
+TEST_CASE("a move from a source outside the board reports the outside-board reason") {
+    Board board;
+    parse("Board:\nwR . .\n", board);
+    MoveValidation result = validateMove(board, -1, 0, 0, 1);
+    CHECK_FALSE(result.is_valid);
+    CHECK(result.reason == MoveRejectionReason::OutsideBoard);
+}
+
+TEST_CASE("a move to a destination outside the board reports the outside-board reason") {
+    Board board;
+    parse("Board:\nwR . .\n", board);
+    MoveValidation result = validateMove(board, 0, 0, 5, 5);
+    CHECK_FALSE(result.is_valid);
+    CHECK(result.reason == MoveRejectionReason::OutsideBoard);
 }

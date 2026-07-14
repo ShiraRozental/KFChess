@@ -21,3 +21,6 @@ CMakeCache.txt
 CMakeFiles/
 cmake_install.cmake
 compile_commands.json
+
+# Local working notes - not shared via git
+PLAN.md
