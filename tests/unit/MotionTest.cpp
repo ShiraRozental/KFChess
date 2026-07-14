@@ -50,6 +50,47 @@ TEST_CASE("a jump is due after 1000ms regardless of distance (source equals dest
     CHECK(motion.isDueBy(1000));
 }
 
+TEST_CASE("currentCellAt walks through every intermediate cell of a straight three-cell move") {
+    Piece piece = makePiece(Position{0, 0});
+    Motion motion = Motion::move(piece, Position{0, 0}, Position{0, 3}, 0);
+
+    CHECK(motion.currentCellAt(0) == Position{0, 0});
+    CHECK(motion.currentCellAt(999) == Position{0, 0});
+    CHECK(motion.currentCellAt(1000) == Position{0, 1});
+    CHECK(motion.currentCellAt(1999) == Position{0, 1});
+    CHECK(motion.currentCellAt(2000) == Position{0, 2});
+    CHECK(motion.currentCellAt(2999) == Position{0, 2});
+    CHECK(motion.currentCellAt(3000) == Position{0, 3});
+}
+
+TEST_CASE("currentCellAt walks through every intermediate cell of a diagonal move") {
+    Piece piece = makePiece(Position{0, 0});
+    Motion motion = Motion::move(piece, Position{0, 0}, Position{2, 2}, 0);
+
+    CHECK(motion.currentCellAt(999) == Position{0, 0});
+    CHECK(motion.currentCellAt(1000) == Position{1, 1});
+    CHECK(motion.currentCellAt(1999) == Position{1, 1});
+    CHECK(motion.currentCellAt(2000) == Position{2, 2});
+}
+
+TEST_CASE("currentCellAt reports a knight's shape only at its two endpoints, never mid-flight") {
+    Piece piece = makePiece(Position{0, 0});
+    Motion motion = Motion::move(piece, Position{0, 0}, Position{2, 1}, 0); // Chebyshev distance 2
+
+    CHECK(motion.currentCellAt(0) == Position{0, 0});
+    CHECK(motion.currentCellAt(1999) == Position{0, 0}); // still at source: no intermediate cell exists
+    CHECK(motion.currentCellAt(2000) == Position{2, 1});
+}
+
+TEST_CASE("currentCellAt reports a jump's own cell at every point in its short flight") {
+    Piece piece = makePiece(Position{1, 1});
+    Motion motion = Motion::jump(piece, Position{1, 1}, 0);
+
+    CHECK(motion.currentCellAt(0) == Position{1, 1});
+    CHECK(motion.currentCellAt(999) == Position{1, 1});
+    CHECK(motion.currentCellAt(1000) == Position{1, 1});
+}
+
 TEST_CASE("a motion owns its own copy of the piece, detached from the original") {
     Piece piece = makePiece(Position{0, 0});
     Motion motion = Motion::move(piece, Position{0, 0}, Position{0, 1}, 0);

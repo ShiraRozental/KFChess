@@ -118,11 +118,11 @@ TEST_CASE("a two-cell move needs two cells' worth of wait time to arrive") {
     std::ostringstream out;
     runner.executeLine("click 50 50", out);
     runner.executeLine("click 250 50", out);
-    runner.executeLine("wait 1000", out);
+    runner.executeLine("wait 1000", out);     // halfway: shown at the intermediate cell it just entered
     runner.executeLine("print board", out);
     runner.executeLine("wait 1000", out);
     runner.executeLine("print board", out);
-    CHECK(out.str() == "wR . .\n. . wR\n");
+    CHECK(out.str() == ". wR .\n. . wR\n");
 }
 
 TEST_CASE("a move does not appear on the board before its arrival time") {
@@ -230,12 +230,12 @@ TEST_CASE("a redirect attempt while moving does not cancel the original pending 
     runner.executeLine("click 250 50", out);  // move wR to (0,2), 2000ms
     runner.executeLine("click 50 50", out);   // re-select wR
     runner.executeLine("click 50 150", out);  // blocked redirect attempt to (1,0)
-    runner.executeLine("wait 1000", out);     // half of the original duration: not yet arrived
+    runner.executeLine("wait 1000", out);     // half of the original duration: shown at the intermediate cell
     runner.executeLine("print board", out);
     runner.executeLine("wait 1000", out);     // now the original move fully arrives
     runner.executeLine("print board", out);
     CHECK(out.str() ==
-        "wR . .\n. . .\n. . .\n"
+        ". wR .\n. . .\n. . .\n"
         ". . wR\n. . .\n. . .\n");
 }
 
@@ -354,12 +354,12 @@ TEST_CASE("a pawn can move two cells from its start row and takes proportionally
     std::ostringstream out;
     runner.executeLine("click 50 450", out); // select wP at (4,0), its start row
     runner.executeLine("click 50 250", out); // move to (2,0): Chebyshev distance 2, 2000ms
-    runner.executeLine("wait 1000", out);    // half the duration: not yet arrived
+    runner.executeLine("wait 1000", out);    // half the duration: shown at the intermediate cell
     runner.executeLine("print board", out);
     runner.executeLine("wait 1000", out);    // now the move fully arrives
     runner.executeLine("print board", out);
     CHECK(out.str() ==
-        ". . .\n. . .\n. . .\n. . .\nwP . .\n"
+        ". . .\n. . .\n. . .\nwP . .\n. . .\n"
         ". . .\n. . .\nwP . .\n. . .\n. . .\n");
 }
 

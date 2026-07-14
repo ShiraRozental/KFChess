@@ -48,6 +48,15 @@ TEST_CASE("inFlightPieces is empty with nothing in flight and shows a mover at i
     CHECK(fliers[0].cell == Position{2, 0});
 }
 
+TEST_CASE("inFlightPieces tracks a mover's real position as the clock advances, not just its source") {
+    RealTimeArbiter arbiter;
+    arbiter.startMotion(makePiece(Position{0, 0}), Position{0, 0}, Position{0, 2});
+
+    CHECK(arbiter.inFlightPieces()[0].cell == Position{0, 0});
+    arbiter.advanceTime(1000); // enters the intermediate cell, does not arrive yet
+    CHECK(arbiter.inFlightPieces()[0].cell == Position{0, 1});
+}
+
 TEST_CASE("a move that has not reached its arrival time yet produces no events") {
     RealTimeArbiter arbiter;
     arbiter.startMotion(makePiece(Position{0, 0}), Position{0, 0}, Position{0, 1});

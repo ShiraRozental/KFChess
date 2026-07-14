@@ -71,13 +71,15 @@ ArrivalEvents RealTimeArbiter::advanceTime(int ms) {
     return events;
 }
 
-// Copies of every in-flight piece with its display cell, so GameEngine can
-// compose a snapshot in which mid-motion pieces never disappear.
+// Copies of every in-flight piece with its current display cell (its
+// actual position along its trajectory at the current clock, not always
+// its source), so GameEngine can compose a snapshot in which mid-motion
+// pieces never disappear and are shown where they really are.
 std::vector<InFlightPiece> RealTimeArbiter::inFlightPieces() const {
     std::vector<InFlightPiece> fliers;
     fliers.reserve(motions_.size());
     for (const Motion& motion : motions_) {
-        fliers.push_back(InFlightPiece{motion.piece(), motion.source()});
+        fliers.push_back(InFlightPiece{motion.piece(), motion.currentCellAt(clockMs_)});
     }
     return fliers;
 }
