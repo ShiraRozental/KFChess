@@ -1,16 +1,19 @@
 #include "doctest/doctest.h"
 #include "engine/GameEngine.h"
+#include "app/TextTestRunner.h"
+#include "rules/RuleEngine.h"
 #include <sstream>
 
 TEST_CASE("click selects then moves a piece") {
     GameEngine game;
     std::string error;
     game.loadBoard("Board:\nwK . .\n. . .\n. . .\n", error);
+    TextTestRunner runner(game);
     std::ostringstream out;
-    game.executeLine("click 50 50", out);
-    game.executeLine("click 150 150", out);
-    game.executeLine("wait 1000", out);
-    game.executeLine("print board", out);
+    runner.executeLine("click 50 50", out);
+    runner.executeLine("click 150 150", out);
+    runner.executeLine("wait 1000", out);
+    runner.executeLine("print board", out);
     CHECK(out.str() == ". . .\n. wK .\n. . .\n");
 }
 
@@ -18,10 +21,11 @@ TEST_CASE("click just outside the board with a negative pixel is ignored") {
     GameEngine game;
     std::string error;
     game.loadBoard("Board:\nwK . .\nbR . .\n. . .\n", error);
+    TextTestRunner runner(game);
     std::ostringstream out;
-    game.executeLine("click 50 50", out);
-    game.executeLine("click -10 150", out);
-    game.executeLine("print board", out);
+    runner.executeLine("click 50 50", out);
+    runner.executeLine("click -10 150", out);
+    runner.executeLine("print board", out);
     CHECK(out.str() == "wK . .\nbR . .\n. . .\n");
 }
 
@@ -29,32 +33,35 @@ TEST_CASE("clicking an empty cell without a selection is ignored") {
     GameEngine game;
     std::string error;
     game.loadBoard("Board:\nwK . .\n. . .\n. . .\n", error);
+    TextTestRunner runner(game);
     std::ostringstream out;
-    game.executeLine("click 250 250", out);
-    game.executeLine("print board", out);
+    runner.executeLine("click 250 250", out);
+    runner.executeLine("print board", out);
     CHECK(out.str() == "wK . .\n. . .\n. . .\n");
 }
 
-TEST_CASE("clicking another friendly piece replaces the selection") {
+TEST_CASE("clicking a friendly piece as the second click is rejected, not reselected") {
     GameEngine game;
     std::string error;
     game.loadBoard("Board:\nwR . wK\n. . .\n", error);
+    TextTestRunner runner(game);
     std::ostringstream out;
-    game.executeLine("click 50 50", out);
-    game.executeLine("click 250 50", out);
-    game.executeLine("click 250 150", out);
-    game.executeLine("wait 1000", out);
-    game.executeLine("print board", out);
-    CHECK(out.str() == "wR . .\n. . wK\n");
+    runner.executeLine("click 50 50", out);   // select wR at (0,0)
+    runner.executeLine("click 250 50", out);  // second click on wK (same color): request rejected, selection cleared (no reselect)
+    runner.executeLine("click 250 150", out); // fresh first click on an empty cell: no-op
+    runner.executeLine("wait 1000", out);
+    runner.executeLine("print board", out);
+    CHECK(out.str() == "wR . wK\n. . .\n");
 }
 
 TEST_CASE("malformed click arguments are ignored") {
     GameEngine game;
     std::string error;
     game.loadBoard("Board:\nwK .\n. .\n", error);
+    TextTestRunner runner(game);
     std::ostringstream out;
-    game.executeLine("click abc def", out);
-    game.executeLine("print board", out);
+    runner.executeLine("click abc def", out);
+    runner.executeLine("print board", out);
     CHECK(out.str() == "wK .\n. .\n");
 }
 
@@ -69,10 +76,11 @@ TEST_CASE("clicking a rook blocked by a piece in its path does not move it") {
     GameEngine game;
     std::string error;
     game.loadBoard("Board:\nwR bP .\n", error);
+    TextTestRunner runner(game);
     std::ostringstream out;
-    game.executeLine("click 50 50", out);
-    game.executeLine("click 250 50", out);
-    game.executeLine("print board", out);
+    runner.executeLine("click 50 50", out);
+    runner.executeLine("click 250 50", out);
+    runner.executeLine("print board", out);
     CHECK(out.str() == "wR bP .\n");
 }
 
@@ -80,11 +88,12 @@ TEST_CASE("clicking a rook with a clear path captures the enemy piece at the des
     GameEngine game;
     std::string error;
     game.loadBoard("Board:\nwR . bP\n", error);
+    TextTestRunner runner(game);
     std::ostringstream out;
-    game.executeLine("click 50 50", out);
-    game.executeLine("click 250 50", out);
-    game.executeLine("wait 2000", out); // 2-cell move: 2 x kMoveDurationPerCellMs
-    game.executeLine("print board", out);
+    runner.executeLine("click 50 50", out);
+    runner.executeLine("click 250 50", out);
+    runner.executeLine("wait 2000", out); // 2-cell move: 2 x kMoveDurationPerCellMs
+    runner.executeLine("print board", out);
     CHECK(out.str() == ". . wR\n");
 }
 
@@ -92,11 +101,12 @@ TEST_CASE("knight jumps over surrounding pieces to reach its destination") {
     GameEngine game;
     std::string error;
     game.loadBoard("Board:\nwN bP bP\nbP bP .\n", error);
+    TextTestRunner runner(game);
     std::ostringstream out;
-    game.executeLine("click 50 50", out);
-    game.executeLine("click 250 150", out);
-    game.executeLine("wait 2000", out); // Chebyshev distance 2: 2 x kMoveDurationPerCellMs
-    game.executeLine("print board", out);
+    runner.executeLine("click 50 50", out);
+    runner.executeLine("click 250 150", out);
+    runner.executeLine("wait 2000", out); // Chebyshev distance 2: 2 x kMoveDurationPerCellMs
+    runner.executeLine("print board", out);
     CHECK(out.str() == ". bP bP\nbP bP wN\n");
 }
 
@@ -104,13 +114,14 @@ TEST_CASE("a two-cell move needs two cells' worth of wait time to arrive") {
     GameEngine game;
     std::string error;
     game.loadBoard("Board:\nwR . .\n", error);
+    TextTestRunner runner(game);
     std::ostringstream out;
-    game.executeLine("click 50 50", out);
-    game.executeLine("click 250 50", out);
-    game.executeLine("wait 1000", out);
-    game.executeLine("print board", out);
-    game.executeLine("wait 1000", out);
-    game.executeLine("print board", out);
+    runner.executeLine("click 50 50", out);
+    runner.executeLine("click 250 50", out);
+    runner.executeLine("wait 1000", out);
+    runner.executeLine("print board", out);
+    runner.executeLine("wait 1000", out);
+    runner.executeLine("print board", out);
     CHECK(out.str() == "wR . .\n. . wR\n");
 }
 
@@ -118,10 +129,11 @@ TEST_CASE("a move does not appear on the board before its arrival time") {
     GameEngine game;
     std::string error;
     game.loadBoard("Board:\nwK . .\n. . .\n. . .\n", error);
+    TextTestRunner runner(game);
     std::ostringstream out;
-    game.executeLine("click 50 50", out);
-    game.executeLine("click 150 150", out);
-    game.executeLine("print board", out);
+    runner.executeLine("click 50 50", out);
+    runner.executeLine("click 150 150", out);
+    runner.executeLine("print board", out);
     CHECK(out.str() == "wK . .\n. . .\n. . .\n");
 }
 
@@ -129,11 +141,12 @@ TEST_CASE("a move does not appear after a wait shorter than the move duration") 
     GameEngine game;
     std::string error;
     game.loadBoard("Board:\nwK . .\n. . .\n. . .\n", error);
+    TextTestRunner runner(game);
     std::ostringstream out;
-    game.executeLine("click 50 50", out);
-    game.executeLine("click 150 150", out);
-    game.executeLine("wait 500", out);
-    game.executeLine("print board", out);
+    runner.executeLine("click 50 50", out);
+    runner.executeLine("click 150 150", out);
+    runner.executeLine("wait 500", out);
+    runner.executeLine("print board", out);
     CHECK(out.str() == "wK . .\n. . .\n. . .\n");
 }
 
@@ -141,11 +154,12 @@ TEST_CASE("a move appears at its destination after waiting long enough") {
     GameEngine game;
     std::string error;
     game.loadBoard("Board:\nwK . .\n. . .\n. . .\n", error);
+    TextTestRunner runner(game);
     std::ostringstream out;
-    game.executeLine("click 50 50", out);
-    game.executeLine("click 150 150", out);
-    game.executeLine("wait 5000", out);
-    game.executeLine("print board", out);
+    runner.executeLine("click 50 50", out);
+    runner.executeLine("click 150 150", out);
+    runner.executeLine("wait 5000", out);
+    runner.executeLine("print board", out);
     CHECK(out.str() == ". . .\n. wK .\n. . .\n");
 }
 
@@ -153,11 +167,12 @@ TEST_CASE("a move appears exactly when the wait matches the move duration") {
     GameEngine game;
     std::string error;
     game.loadBoard("Board:\nwK . .\n. . .\n. . .\n", error);
+    TextTestRunner runner(game);
     std::ostringstream out;
-    game.executeLine("click 50 50", out);
-    game.executeLine("click 150 150", out);
-    game.executeLine("wait 1000", out);
-    game.executeLine("print board", out);
+    runner.executeLine("click 50 50", out);
+    runner.executeLine("click 150 150", out);
+    runner.executeLine("wait 1000", out);
+    runner.executeLine("print board", out);
     CHECK(out.str() == ". . .\n. wK .\n. . .\n");
 }
 
@@ -165,14 +180,15 @@ TEST_CASE("a second piece can move only after the first pending move has fully r
     GameEngine game;
     std::string error;
     game.loadBoard("Board:\nwK . .\n. . bK\n. . .\n", error);
+    TextTestRunner runner(game);
     std::ostringstream out;
-    game.executeLine("click 50 50", out);   // select wK at (0,0)
-    game.executeLine("click 50 150", out);  // move wK to (1,0), 1000ms
-    game.executeLine("wait 1000", out);     // wK arrives: the board is free again
-    game.executeLine("click 250 150", out); // select bK at (1,2)
-    game.executeLine("click 150 150", out); // move bK to (1,1), 1000ms
-    game.executeLine("wait 1000", out);
-    game.executeLine("print board", out);
+    runner.executeLine("click 50 50", out);   // select wK at (0,0)
+    runner.executeLine("click 50 150", out);  // move wK to (1,0), 1000ms
+    runner.executeLine("wait 1000", out);     // wK arrives: the board is free again
+    runner.executeLine("click 250 150", out); // select bK at (1,2)
+    runner.executeLine("click 150 150", out); // move bK to (1,1), 1000ms
+    runner.executeLine("wait 1000", out);
+    runner.executeLine("print board", out);
     CHECK(out.str() == ". . .\nwK bK .\n. . .\n");
 }
 
@@ -180,11 +196,12 @@ TEST_CASE("an illegal click does not schedule a pending move") {
     GameEngine game;
     std::string error;
     game.loadBoard("Board:\nwR bP .\n", error);
+    TextTestRunner runner(game);
     std::ostringstream out;
-    game.executeLine("click 50 50", out);
-    game.executeLine("click 250 50", out);
-    game.executeLine("wait 5000", out);
-    game.executeLine("print board", out);
+    runner.executeLine("click 50 50", out);
+    runner.executeLine("click 250 50", out);
+    runner.executeLine("wait 5000", out);
+    runner.executeLine("print board", out);
     CHECK(out.str() == "wR bP .\n");
 }
 
@@ -192,13 +209,14 @@ TEST_CASE("a piece cannot be redirected while it is already moving") {
     GameEngine game;
     std::string error;
     game.loadBoard("Board:\nwR . .\n. . .\n. . .\n", error);
+    TextTestRunner runner(game);
     std::ostringstream out;
-    game.executeLine("click 50 50", out);   // select wR at (0,0)
-    game.executeLine("click 250 50", out);  // move wR to (0,2), 2000ms
-    game.executeLine("click 50 50", out);   // re-select wR (still shown at (0,0))
-    game.executeLine("click 50 150", out);  // attempt redirect to (1,0): must be blocked
-    game.executeLine("wait 2000", out);
-    game.executeLine("print board", out);
+    runner.executeLine("click 50 50", out);   // select wR at (0,0)
+    runner.executeLine("click 250 50", out);  // move wR to (0,2), 2000ms
+    runner.executeLine("click 50 50", out);   // re-select wR (still shown at (0,0))
+    runner.executeLine("click 50 150", out);  // attempt redirect to (1,0): must be blocked
+    runner.executeLine("wait 2000", out);
+    runner.executeLine("print board", out);
     CHECK(out.str() == ". . wR\n. . .\n. . .\n");
 }
 
@@ -206,15 +224,16 @@ TEST_CASE("a redirect attempt while moving does not cancel the original pending 
     GameEngine game;
     std::string error;
     game.loadBoard("Board:\nwR . .\n. . .\n. . .\n", error);
+    TextTestRunner runner(game);
     std::ostringstream out;
-    game.executeLine("click 50 50", out);   // select wR at (0,0)
-    game.executeLine("click 250 50", out);  // move wR to (0,2), 2000ms
-    game.executeLine("click 50 50", out);   // re-select wR
-    game.executeLine("click 50 150", out);  // blocked redirect attempt to (1,0)
-    game.executeLine("wait 1000", out);     // half of the original duration: not yet arrived
-    game.executeLine("print board", out);
-    game.executeLine("wait 1000", out);     // now the original move fully arrives
-    game.executeLine("print board", out);
+    runner.executeLine("click 50 50", out);   // select wR at (0,0)
+    runner.executeLine("click 250 50", out);  // move wR to (0,2), 2000ms
+    runner.executeLine("click 50 50", out);   // re-select wR
+    runner.executeLine("click 50 150", out);  // blocked redirect attempt to (1,0)
+    runner.executeLine("wait 1000", out);     // half of the original duration: not yet arrived
+    runner.executeLine("print board", out);
+    runner.executeLine("wait 1000", out);     // now the original move fully arrives
+    runner.executeLine("print board", out);
     CHECK(out.str() ==
         "wR . .\n. . .\n. . .\n"
         ". . wR\n. . .\n. . .\n");
@@ -224,14 +243,15 @@ TEST_CASE("a piece can move again immediately after arriving, with no extra wait
     GameEngine game;
     std::string error;
     game.loadBoard("Board:\nwK . .\n. . .\n. . .\n", error);
+    TextTestRunner runner(game);
     std::ostringstream out;
-    game.executeLine("click 50 50", out);   // select wK at (0,0)
-    game.executeLine("click 150 50", out);  // move to (0,1), 1000ms
-    game.executeLine("wait 1000", out);     // arrives
-    game.executeLine("click 150 50", out);  // select wK at its new position (0,1)
-    game.executeLine("click 250 50", out);  // move to (0,2), 1000ms: no extra cooldown needed
-    game.executeLine("wait 1000", out);
-    game.executeLine("print board", out);
+    runner.executeLine("click 50 50", out);   // select wK at (0,0)
+    runner.executeLine("click 150 50", out);  // move to (0,1), 1000ms
+    runner.executeLine("wait 1000", out);     // arrives
+    runner.executeLine("click 150 50", out);  // select wK at its new position (0,1)
+    runner.executeLine("click 250 50", out);  // move to (0,2), 1000ms: no extra cooldown needed
+    runner.executeLine("wait 1000", out);
+    runner.executeLine("print board", out);
     CHECK(out.str() == ". . wK\n. . .\n. . .\n");
 }
 
@@ -239,13 +259,14 @@ TEST_CASE("redirect is blocked even when the new destination would otherwise be 
     GameEngine game;
     std::string error;
     game.loadBoard("Board:\nwR . .\n", error);
+    TextTestRunner runner(game);
     std::ostringstream out;
-    game.executeLine("click 50 50", out);   // select wR at (0,0)
-    game.executeLine("click 250 50", out);  // move to (0,2), 2000ms
-    game.executeLine("click 50 50", out);   // re-select wR (still shown at origin)
-    game.executeLine("click 150 50", out);  // attempt redirect to (0,1): otherwise legal, still blocked
-    game.executeLine("wait 2000", out);
-    game.executeLine("print board", out);
+    runner.executeLine("click 50 50", out);   // select wR at (0,0)
+    runner.executeLine("click 250 50", out);  // move to (0,2), 2000ms
+    runner.executeLine("click 50 50", out);   // re-select wR (still shown at origin)
+    runner.executeLine("click 150 50", out);  // attempt redirect to (0,1): otherwise legal, still blocked
+    runner.executeLine("wait 2000", out);
+    runner.executeLine("print board", out);
     CHECK(out.str() == ". . wR\n");
 }
 
@@ -253,13 +274,14 @@ TEST_CASE("a piece of the opposite color cannot move while another piece is mid-
     GameEngine game;
     std::string error;
     game.loadBoard("Board:\nwR . .\n. . .\nbR . .\n", error);
+    TextTestRunner runner(game);
     std::ostringstream out;
-    game.executeLine("click 50 50", out);   // select wR at (0,0)
-    game.executeLine("click 250 50", out);  // move wR to (0,2), 2000ms
-    game.executeLine("click 50 250", out);  // select bR at (2,0)
-    game.executeLine("click 250 250", out); // attempt to move bR to (2,2): blocked, board busy
-    game.executeLine("wait 2000", out);
-    game.executeLine("print board", out);
+    runner.executeLine("click 50 50", out);   // select wR at (0,0)
+    runner.executeLine("click 250 50", out);  // move wR to (0,2), 2000ms
+    runner.executeLine("click 50 250", out);  // select bR at (2,0)
+    runner.executeLine("click 250 250", out); // attempt to move bR to (2,2): blocked, board busy
+    runner.executeLine("wait 2000", out);
+    runner.executeLine("print board", out);
     CHECK(out.str() == ". . wR\n. . .\nbR . .\n");
 }
 
@@ -267,13 +289,14 @@ TEST_CASE("a piece of the same color also cannot move while another piece is mid
     GameEngine game;
     std::string error;
     game.loadBoard("Board:\nwR . .\n. . .\nwN . .\n", error);
+    TextTestRunner runner(game);
     std::ostringstream out;
-    game.executeLine("click 50 50", out);   // select wR at (0,0)
-    game.executeLine("click 250 50", out);  // move wR to (0,2), 2000ms
-    game.executeLine("click 50 250", out);  // select wN at (2,0)
-    game.executeLine("click 250 150", out); // attempt to move wN to (1,2): blocked, board busy
-    game.executeLine("wait 2000", out);
-    game.executeLine("print board", out);
+    runner.executeLine("click 50 50", out);   // select wR at (0,0)
+    runner.executeLine("click 250 50", out);  // move wR to (0,2), 2000ms
+    runner.executeLine("click 50 250", out);  // select wN at (2,0)
+    runner.executeLine("click 250 150", out); // attempt to move wN to (1,2): blocked, board busy
+    runner.executeLine("wait 2000", out);
+    runner.executeLine("print board", out);
     CHECK(out.str() == ". . wR\n. . .\nwN . .\n");
 }
 
@@ -281,11 +304,12 @@ TEST_CASE("capturing the enemy king ends the game") {
     GameEngine game;
     std::string error;
     game.loadBoard("Board:\nwR . bK\n", error);
+    TextTestRunner runner(game);
     std::ostringstream out;
-    game.executeLine("click 50 50", out);   // select wR at (0,0)
-    game.executeLine("click 250 50", out);  // move wR to (0,2): captures bK, 2000ms
-    game.executeLine("wait 2000", out);
-    game.executeLine("print board", out);
+    runner.executeLine("click 50 50", out);   // select wR at (0,0)
+    runner.executeLine("click 250 50", out);  // move wR to (0,2): captures bK, 2000ms
+    runner.executeLine("wait 2000", out);
+    runner.executeLine("print board", out);
     CHECK(out.str() == ". . wR\n");
 }
 
@@ -293,14 +317,15 @@ TEST_CASE("after the game is over, further click and wait commands are ignored")
     GameEngine game;
     std::string error;
     game.loadBoard("Board:\nwR . bK\nbR . .\n", error);
+    TextTestRunner runner(game);
     std::ostringstream out;
-    game.executeLine("click 50 50", out);   // select wR at (0,0)
-    game.executeLine("click 250 50", out);  // move wR to (0,2): captures bK, 2000ms
-    game.executeLine("wait 2000", out);     // game ends here: white wins
-    game.executeLine("click 50 150", out);  // select bR at (1,0): must be ignored
-    game.executeLine("click 150 150", out); // attempt to move bR to (1,1): must be ignored
-    game.executeLine("wait 1000", out);     // must not resolve any move
-    game.executeLine("print board", out);
+    runner.executeLine("click 50 50", out);   // select wR at (0,0)
+    runner.executeLine("click 250 50", out);  // move wR to (0,2): captures bK, 2000ms
+    runner.executeLine("wait 2000", out);     // game ends here: white wins
+    runner.executeLine("click 50 150", out);  // select bR at (1,0): must be ignored
+    runner.executeLine("click 150 150", out); // attempt to move bR to (1,1): must be ignored
+    runner.executeLine("wait 1000", out);     // must not resolve any move
+    runner.executeLine("print board", out);
     CHECK(out.str() == ". . wR\nbR . .\n");
 }
 
@@ -308,10 +333,11 @@ TEST_CASE("black capturing white's king reports black as the winner") {
     GameEngine game;
     std::string error;
     game.loadBoard("Board:\nbR . wK\n", error);
+    TextTestRunner runner(game);
     std::ostringstream out;
-    game.executeLine("click 50 50", out);   // select bR at (0,0)
-    game.executeLine("click 250 50", out);  // move bR to (0,2): captures wK, 2000ms
-    game.executeLine("wait 2000", out);
+    runner.executeLine("click 50 50", out);   // select bR at (0,0)
+    runner.executeLine("click 250 50", out);  // move bR to (0,2): captures wK, 2000ms
+    runner.executeLine("wait 2000", out);
     CHECK(game.isGameOver());
     REQUIRE(game.winner().has_value());
     CHECK(*game.winner() == PieceColor::Black);
@@ -324,13 +350,14 @@ TEST_CASE("a pawn can move two cells from its start row and takes proportionally
     // row 2 is not the promotion row, so this test isolates movement/timing
     // from the separate promotion behavior.
     game.loadBoard("Board:\n. . .\n. . .\n. . .\n. . .\nwP . .\n", error);
+    TextTestRunner runner(game);
     std::ostringstream out;
-    game.executeLine("click 50 450", out); // select wP at (4,0), its start row
-    game.executeLine("click 50 250", out); // move to (2,0): Chebyshev distance 2, 2000ms
-    game.executeLine("wait 1000", out);    // half the duration: not yet arrived
-    game.executeLine("print board", out);
-    game.executeLine("wait 1000", out);    // now the move fully arrives
-    game.executeLine("print board", out);
+    runner.executeLine("click 50 450", out); // select wP at (4,0), its start row
+    runner.executeLine("click 50 250", out); // move to (2,0): Chebyshev distance 2, 2000ms
+    runner.executeLine("wait 1000", out);    // half the duration: not yet arrived
+    runner.executeLine("print board", out);
+    runner.executeLine("wait 1000", out);    // now the move fully arrives
+    runner.executeLine("print board", out);
     CHECK(out.str() ==
         ". . .\n. . .\n. . .\n. . .\nwP . .\n"
         ". . .\n. . .\nwP . .\n. . .\n. . .\n");
@@ -340,11 +367,12 @@ TEST_CASE("a pawn cannot move two cells from a row that is not its start row") {
     GameEngine game;
     std::string error;
     game.loadBoard("Board:\n. . .\n. . .\nwP . .\n. . .\n", error);
+    TextTestRunner runner(game);
     std::ostringstream out;
-    game.executeLine("click 50 250", out); // select wP at (2,0): start row is (3), not (2)
-    game.executeLine("click 50 50", out);  // attempt move to (0,0): illegal, no pending move
-    game.executeLine("wait 5000", out);
-    game.executeLine("print board", out);
+    runner.executeLine("click 50 250", out); // select wP at (2,0): start row is (3), not (2)
+    runner.executeLine("click 50 50", out);  // attempt move to (0,0): illegal, no pending move
+    runner.executeLine("wait 5000", out);
+    runner.executeLine("print board", out);
     CHECK(out.str() == ". . .\n. . .\nwP . .\n. . .\n");
 }
 
@@ -352,11 +380,12 @@ TEST_CASE("a white pawn becomes a queen when it reaches the last row") {
     GameEngine game;
     std::string error;
     game.loadBoard("Board:\n. . .\nwP . .\n", error);
+    TextTestRunner runner(game);
     std::ostringstream out;
-    game.executeLine("click 50 150", out); // select wP at (1,0)
-    game.executeLine("click 50 50", out);  // move to (0,0): its promotion row, 1000ms
-    game.executeLine("wait 1000", out);
-    game.executeLine("print board", out);
+    runner.executeLine("click 50 150", out); // select wP at (1,0)
+    runner.executeLine("click 50 50", out);  // move to (0,0): its promotion row, 1000ms
+    runner.executeLine("wait 1000", out);
+    runner.executeLine("print board", out);
     CHECK(out.str() == "wQ . .\n. . .\n");
 }
 
@@ -364,11 +393,12 @@ TEST_CASE("a black pawn becomes a queen when it reaches the last row") {
     GameEngine game;
     std::string error;
     game.loadBoard("Board:\nbP . .\n. . .\n", error);
+    TextTestRunner runner(game);
     std::ostringstream out;
-    game.executeLine("click 50 50", out);   // select bP at (0,0)
-    game.executeLine("click 50 150", out);  // move to (1,0): its promotion row, 1000ms
-    game.executeLine("wait 1000", out);
-    game.executeLine("print board", out);
+    runner.executeLine("click 50 50", out);   // select bP at (0,0)
+    runner.executeLine("click 50 150", out);  // move to (1,0): its promotion row, 1000ms
+    runner.executeLine("wait 1000", out);
+    runner.executeLine("print board", out);
     CHECK(out.str() == ". . .\nbQ . .\n");
 }
 
@@ -376,11 +406,12 @@ TEST_CASE("a pawn that captures diagonally into the last row also becomes a quee
     GameEngine game;
     std::string error;
     game.loadBoard("Board:\nbR . .\n. wP .\n", error);
+    TextTestRunner runner(game);
     std::ostringstream out;
-    game.executeLine("click 150 150", out); // select wP at (1,1)
-    game.executeLine("click 50 50", out);   // capture bR at (0,0): its promotion row, 1000ms
-    game.executeLine("wait 1000", out);
-    game.executeLine("print board", out);
+    runner.executeLine("click 150 150", out); // select wP at (1,1)
+    runner.executeLine("click 50 50", out);   // capture bR at (0,0): its promotion row, 1000ms
+    runner.executeLine("wait 1000", out);
+    runner.executeLine("print board", out);
     CHECK(out.str() == "wQ . .\n. . .\n");
 }
 
@@ -388,13 +419,14 @@ TEST_CASE("isGameOver and winner report correctly before and after white wins") 
     GameEngine game;
     std::string error;
     game.loadBoard("Board:\nwR . bK\n", error);
+    TextTestRunner runner(game);
     std::ostringstream out;
     CHECK_FALSE(game.isGameOver());
     CHECK_FALSE(game.winner().has_value());
 
-    game.executeLine("click 50 50", out);
-    game.executeLine("click 250 50", out);
-    game.executeLine("wait 2000", out);
+    runner.executeLine("click 50 50", out);
+    runner.executeLine("click 250 50", out);
+    runner.executeLine("wait 2000", out);
 
     CHECK(game.isGameOver());
     REQUIRE(game.winner().has_value());
@@ -405,10 +437,11 @@ TEST_CASE("a jump with nothing arriving lands the piece back on its own square")
     GameEngine game;
     std::string error;
     game.loadBoard("Board:\n. . .\n. wK .\n. . .\n", error);
+    TextTestRunner runner(game);
     std::ostringstream out;
-    game.executeLine("jump 150 150", out); // wK at (1,1) jumps in place
-    game.executeLine("wait 1000", out);    // jump duration elapses, no arrival
-    game.executeLine("print board", out);
+    runner.executeLine("jump 150 150", out); // wK at (1,1) jumps in place
+    runner.executeLine("wait 1000", out);    // jump duration elapses, no arrival
+    runner.executeLine("print board", out);
     CHECK(out.str() == ". . .\n. wK .\n. . .\n");
 }
 
@@ -416,12 +449,13 @@ TEST_CASE("an airborne piece captures an enemy that arrives at its cell before i
     GameEngine game;
     std::string error;
     game.loadBoard("Board:\n. . .\nwK bR .\n. . .\n", error);
+    TextTestRunner runner(game);
     std::ostringstream out;
-    game.executeLine("jump 50 150", out);   // wK at (1,0) jumps, airborne until t=1000
-    game.executeLine("click 150 150", out); // select bR at (1,1)
-    game.executeLine("click 50 150", out);  // bR moves onto wK's cell: distance 1, arrives at t=1000
-    game.executeLine("wait 1000", out);     // move and landing coincide: defense wins the tie
-    game.executeLine("print board", out);
+    runner.executeLine("jump 50 150", out);   // wK at (1,0) jumps, airborne until t=1000
+    runner.executeLine("click 150 150", out); // select bR at (1,1)
+    runner.executeLine("click 50 150", out);  // bR moves onto wK's cell: distance 1, arrives at t=1000
+    runner.executeLine("wait 1000", out);     // move and landing coincide: defense wins the tie
+    runner.executeLine("print board", out);
     CHECK(out.str() == ". . .\nwK . .\n. . .\n");
 }
 
@@ -429,12 +463,13 @@ TEST_CASE("jumping after a capture has already resolved does not undo it") {
     GameEngine game;
     std::string error;
     game.loadBoard("Board:\n. . .\nwK bR .\n. . .\n", error);
+    TextTestRunner runner(game);
     std::ostringstream out;
-    game.executeLine("click 150 150", out); // select bR at (1,1)
-    game.executeLine("click 50 150", out);  // bR moves onto wK's cell: distance 1, 1000ms
-    game.executeLine("wait 1000", out);     // wK is captured before any jump is attempted
-    game.executeLine("jump 50 150", out);   // too late: wK is already gone
-    game.executeLine("print board", out);
+    runner.executeLine("click 150 150", out); // select bR at (1,1)
+    runner.executeLine("click 50 150", out);  // bR moves onto wK's cell: distance 1, 1000ms
+    runner.executeLine("wait 1000", out);     // wK is captured before any jump is attempted
+    runner.executeLine("jump 50 150", out);   // too late: wK is already gone
+    runner.executeLine("print board", out);
     CHECK(out.str() == ". . .\nbR . .\n. . .\n");
 }
 
@@ -442,13 +477,14 @@ TEST_CASE("an enemy that arrives after a jump has already landed captures normal
     GameEngine game;
     std::string error;
     game.loadBoard("Board:\n. . . .\nwK . . bR\n. . . .\n", error);
+    TextTestRunner runner(game);
     std::ostringstream out;
-    game.executeLine("jump 50 150", out);   // wK at (1,0) jumps, airborne until t=1000
-    game.executeLine("wait 1000", out);     // jump lands normally, wK unprotected again
-    game.executeLine("click 350 150", out); // select bR at (1,3)
-    game.executeLine("click 50 150", out);  // bR moves onto wK's cell: distance 3, 3000ms
-    game.executeLine("wait 3000", out);     // arrives at t=4000, long after wK landed
-    game.executeLine("print board", out);
+    runner.executeLine("jump 50 150", out);   // wK at (1,0) jumps, airborne until t=1000
+    runner.executeLine("wait 1000", out);     // jump lands normally, wK unprotected again
+    runner.executeLine("click 350 150", out); // select bR at (1,3)
+    runner.executeLine("click 50 150", out);  // bR moves onto wK's cell: distance 3, 3000ms
+    runner.executeLine("wait 3000", out);     // arrives at t=4000, long after wK landed
+    runner.executeLine("print board", out);
     CHECK(out.str() == ". . . .\nbR . . .\n. . . .\n");
 }
 
@@ -456,13 +492,14 @@ TEST_CASE("a piece that is mid-transit cannot jump") {
     GameEngine game;
     std::string error;
     game.loadBoard("Board:\nwR . .\n", error);
+    TextTestRunner runner(game);
     std::ostringstream out;
-    game.executeLine("click 50 50", out);   // select wR at (0,0)
-    game.executeLine("click 250 50", out);  // move wR to (0,2): distance 2, 2000ms
-    game.executeLine("wait 500", out);      // wR is still mid-transit
-    game.executeLine("jump 50 50", out);    // blocked: a moving piece cannot jump
-    game.executeLine("wait 1500", out);     // move arrives normally
-    game.executeLine("print board", out);
+    runner.executeLine("click 50 50", out);   // select wR at (0,0)
+    runner.executeLine("click 250 50", out);  // move wR to (0,2): distance 2, 2000ms
+    runner.executeLine("wait 500", out);      // wR is still mid-transit
+    runner.executeLine("jump 50 50", out);    // blocked: a moving piece cannot jump
+    runner.executeLine("wait 1500", out);     // move arrives normally
+    runner.executeLine("print board", out);
     CHECK(out.str() == ". . wR\n");
 }
 
@@ -470,12 +507,13 @@ TEST_CASE("an airborne piece only captures an arriving enemy, not a same-color p
     GameEngine game;
     std::string error;
     game.loadBoard("Board:\n. . .\nwK wR .\n. . .\n", error);
+    TextTestRunner runner(game);
     std::ostringstream out;
-    game.executeLine("jump 50 150", out);   // wK at (1,0) jumps
-    game.executeLine("click 150 150", out); // select wR at (1,1), same color as wK
-    game.executeLine("click 50 150", out);  // attempted move onto wK's cell is an illegal same-color capture
-    game.executeLine("wait 1000", out);
-    game.executeLine("print board", out);
+    runner.executeLine("jump 50 150", out);   // wK at (1,0) jumps
+    runner.executeLine("click 150 150", out); // select wR at (1,1), same color as wK
+    runner.executeLine("click 50 150", out);  // attempted move onto wK's cell is an illegal same-color capture
+    runner.executeLine("wait 1000", out);
+    runner.executeLine("print board", out);
     CHECK(out.str() == ". . .\nwK wR .\n. . .\n");
 }
 
@@ -483,10 +521,11 @@ TEST_CASE("jumping on an empty cell does nothing") {
     GameEngine game;
     std::string error;
     game.loadBoard("Board:\n. . .\nwK . .\n. . .\n", error);
+    TextTestRunner runner(game);
     std::ostringstream out;
-    game.executeLine("jump 250 150", out); // (1,2) is empty
-    game.executeLine("wait 1000", out);
-    game.executeLine("print board", out);
+    runner.executeLine("jump 250 150", out); // (1,2) is empty
+    runner.executeLine("wait 1000", out);
+    runner.executeLine("print board", out);
     CHECK(out.str() == ". . .\nwK . .\n. . .\n");
 }
 
@@ -494,9 +533,10 @@ TEST_CASE("jumping at an out-of-bounds pixel is ignored") {
     GameEngine game;
     std::string error;
     game.loadBoard("Board:\nwK . .\n", error);
+    TextTestRunner runner(game);
     std::ostringstream out;
-    game.executeLine("jump -10 50", out);
-    game.executeLine("print board", out);
+    runner.executeLine("jump -10 50", out);
+    runner.executeLine("print board", out);
     CHECK(out.str() == "wK . .\n");
 }
 
@@ -504,13 +544,99 @@ TEST_CASE("jumping an already-airborne piece is ignored and does not extend its 
     GameEngine game;
     std::string error;
     game.loadBoard("Board:\n. . . .\nwK . . bR\n. . . .\n", error);
+    TextTestRunner runner(game);
     std::ostringstream out;
-    game.executeLine("jump 50 150", out);   // wK at (1,0) jumps, airborne until t=1000
-    game.executeLine("jump 50 150", out);   // duplicate attempt: ignored, does not reset the timer
-    game.executeLine("wait 1000", out);     // original jump lands normally, wK unprotected again
-    game.executeLine("click 350 150", out); // select bR at (1,3)
-    game.executeLine("click 50 150", out);  // bR moves onto wK's cell: distance 3, 3000ms
-    game.executeLine("wait 3000", out);     // arrives at t=4000, well after wK's original window
-    game.executeLine("print board", out);
+    runner.executeLine("jump 50 150", out);   // wK at (1,0) jumps, airborne until t=1000
+    runner.executeLine("jump 50 150", out);   // duplicate attempt: ignored, does not reset the timer
+    runner.executeLine("wait 1000", out);     // original jump lands normally, wK unprotected again
+    runner.executeLine("click 350 150", out); // select bR at (1,3)
+    runner.executeLine("click 50 150", out);  // bR moves onto wK's cell: distance 3, 3000ms
+    runner.executeLine("wait 3000", out);     // arrives at t=4000, well after wK's original window
+    runner.executeLine("print board", out);
     CHECK(out.str() == ". . . .\nbR . . .\n. . . .\n");
+}
+
+// The tests below exercise GameEngine's public API directly, in Position
+// terms, with no pixels and no TextTestRunner/Controller involved.
+
+TEST_CASE("requestMove accepts a legal move and returns ok") {
+    GameEngine game;
+    std::string error;
+    game.loadBoard("Board:\nwR . .\n", error);
+    MoveResult result = game.requestMove(Position{0, 0}, Position{0, 2});
+    CHECK(result.is_accepted);
+    CHECK(result.reason == MoveResultReason::Ok);
+}
+
+TEST_CASE("requestMove rejects an illegal move and returns the rule-level reason") {
+    GameEngine game;
+    std::string error;
+    game.loadBoard("Board:\nwR . wP\n", error);
+    MoveResult result = game.requestMove(Position{0, 0}, Position{0, 2});
+    CHECK_FALSE(result.is_accepted);
+    CHECK(result.reason == MoveRejectionReason::FriendlyDestination);
+}
+
+TEST_CASE("requestMove rejects with game_over once the game has ended") {
+    GameEngine game;
+    std::string error;
+    game.loadBoard("Board:\nwR . bK\n", error);
+    game.requestMove(Position{0, 0}, Position{0, 2}); // captures bK, 2000ms
+    game.wait(2000);
+    REQUIRE(game.isGameOver());
+
+    MoveResult result = game.requestMove(Position{0, 2}, Position{0, 1});
+    CHECK_FALSE(result.is_accepted);
+    CHECK(result.reason == MoveResultReason::GameOver);
+}
+
+TEST_CASE("requestMove rejects with motion_in_progress while another move is in flight") {
+    GameEngine game;
+    std::string error;
+    game.loadBoard("Board:\nwR . .\n. . .\nbR . .\n", error);
+    game.requestMove(Position{0, 0}, Position{0, 2}); // wR: 2000ms in flight
+
+    MoveResult result = game.requestMove(Position{2, 0}, Position{2, 2});
+    CHECK_FALSE(result.is_accepted);
+    CHECK(result.reason == MoveResultReason::MotionInProgress);
+}
+
+TEST_CASE("requestJump starts a motion that keeps the piece airborne") {
+    GameEngine game;
+    std::string error;
+    game.loadBoard("Board:\n. . .\nwK bR .\n. . .\n", error);
+    game.requestJump(Position{1, 0}); // wK jumps, airborne until t=1000
+
+    // bR moving onto wK's cell is intercepted while the jump is active.
+    game.requestMove(Position{1, 1}, Position{1, 0});
+    game.wait(1000);
+
+    CHECK(game.hasPieceAt(Position{1, 0}));
+    CHECK_FALSE(game.hasPieceAt(Position{1, 1}));
+}
+
+TEST_CASE("hasPieceAt distinguishes occupied cells from empty ones") {
+    GameEngine game;
+    std::string error;
+    game.loadBoard("Board:\nwK . .\n", error);
+    CHECK(game.hasPieceAt(Position{0, 0}));
+    CHECK_FALSE(game.hasPieceAt(Position{0, 1}));
+}
+
+TEST_CASE("snapshot reflects the current board and game-over state") {
+    GameEngine game;
+    std::string error;
+    game.loadBoard("Board:\nwR . bK\n", error);
+
+    GameSnapshot before = game.snapshot();
+    CHECK_FALSE(before.isGameOver());
+    CHECK(before.board().pieceAt(0, 2) != nullptr);
+
+    game.requestMove(Position{0, 0}, Position{0, 2}); // captures bK, 2000ms
+    game.wait(2000);
+
+    GameSnapshot after = game.snapshot();
+    CHECK(after.isGameOver());
+    REQUIRE(after.winner().has_value());
+    CHECK(*after.winner() == PieceColor::White);
 }

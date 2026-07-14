@@ -1,6 +1,7 @@
 #include <iostream>
 #include "io/BoardParser.h"
 #include "engine/GameEngine.h"
+#include "app/TextTestRunner.h"
 //githube:
 //https://github.com/ShiraRozental/KFChess
 int main() {
@@ -18,8 +19,9 @@ int main() {
         return 0;
     }
 
+    TextTestRunner runner(game);
     for (const auto& line : commandLines) {
-        game.executeLine(line, std::cout);
+        runner.executeLine(line, std::cout);
     }
 
     return 0;
