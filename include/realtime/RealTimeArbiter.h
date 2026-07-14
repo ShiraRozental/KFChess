@@ -1,21 +1,20 @@
 #pragma once
-#include <optional>
 #include <vector>
 #include "realtime/Motion.h"
 #include "model/Piece.h"
-#include "model/PieceColor.h"
 #include "model/Position.h"
 
 // A single motion that has resolved, carrying its piece back to the caller.
 // A normal landing (intercepted == false) means the piece should be placed
 // at `to` (for a jump, to == from). intercepted == true means the piece
-// was captured while still in flight — by an active jump's defense, or by
-// losing a collision to another in-flight piece — and never lands.
+// was captured while still in flight and never lands; kingCaptured is then
+// true iff that piece was a king.
 struct ArrivalEvent {
     Piece piece;
     Position from;
     Position to;
     bool intercepted;
+    bool kingCaptured;
 };
 
 using ArrivalEvents = std::vector<ArrivalEvent>;
@@ -39,8 +38,7 @@ struct InFlightPiece {
 class RealTimeArbiter {
 public:
     bool hasActiveMotion() const;
-    bool hasJumpAt(Position cell) const;
-    std::optional<PieceColor> jumpColorAt(Position cell) const;
+    bool hasMotionFrom(Position cell) const;
     void startMotion(Piece piece, Position source, Position destination);
     ArrivalEvents advanceTime(int ms);
     std::vector<InFlightPiece> inFlightPieces() const;

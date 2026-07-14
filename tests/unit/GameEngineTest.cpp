@@ -270,7 +270,7 @@ TEST_CASE("redirect is blocked even when the new destination would otherwise be 
     CHECK(out.str() == ". . wR\n");
 }
 
-TEST_CASE("a piece of the opposite color cannot move while another piece is mid-transit") {
+TEST_CASE("a piece of the opposite color can move concurrently while another piece is mid-transit") {
     GameEngine game;
     std::string error;
     game.loadBoard("Board:\nwR . .\n. . .\nbR . .\n", error);
@@ -279,13 +279,13 @@ TEST_CASE("a piece of the opposite color cannot move while another piece is mid-
     runner.executeLine("click 50 50", out);   // select wR at (0,0)
     runner.executeLine("click 250 50", out);  // move wR to (0,2), 2000ms
     runner.executeLine("click 50 250", out);  // select bR at (2,0)
-    runner.executeLine("click 250 250", out); // attempt to move bR to (2,2): blocked, board busy
+    runner.executeLine("click 250 250", out); // bR to (2,2), 2000ms — a different piece, runs alongside wR
     runner.executeLine("wait 2000", out);
     runner.executeLine("print board", out);
-    CHECK(out.str() == ". . wR\n. . .\nbR . .\n");
+    CHECK(out.str() == ". . wR\n. . .\n. . bR\n");
 }
 
-TEST_CASE("a piece of the same color also cannot move while another piece is mid-transit") {
+TEST_CASE("a piece of the same color can also move concurrently while another piece is mid-transit") {
     GameEngine game;
     std::string error;
     game.loadBoard("Board:\nwR . .\n. . .\nwN . .\n", error);
@@ -294,10 +294,10 @@ TEST_CASE("a piece of the same color also cannot move while another piece is mid
     runner.executeLine("click 50 50", out);   // select wR at (0,0)
     runner.executeLine("click 250 50", out);  // move wR to (0,2), 2000ms
     runner.executeLine("click 50 250", out);  // select wN at (2,0)
-    runner.executeLine("click 250 150", out); // attempt to move wN to (1,2): blocked, board busy
+    runner.executeLine("click 250 150", out); // wN to (1,2), Chebyshev distance 2: 2000ms — runs alongside wR
     runner.executeLine("wait 2000", out);
     runner.executeLine("print board", out);
-    CHECK(out.str() == ". . wR\n. . .\nwN . .\n");
+    CHECK(out.str() == ". . wR\n. . wN\n. . .\n");
 }
 
 TEST_CASE("capturing the enemy king ends the game") {
@@ -605,15 +605,80 @@ TEST_CASE("requestMove rejects with game_over once the game has ended") {
     CHECK(result.reason == MoveResultReason::GameOver);
 }
 
-TEST_CASE("requestMove rejects with motion_in_progress while another move is in flight") {
+TEST_CASE("requestMove accepts a different piece while another move is in flight") {
     GameEngine game;
     std::string error;
     game.loadBoard("Board:\nwR . .\n. . .\nbR . .\n", error);
     game.requestMove(Position{0, 0}, Position{0, 2}); // wR: 2000ms in flight
 
     MoveResult result = game.requestMove(Position{2, 0}, Position{2, 2});
+    CHECK(result.is_accepted);
+    CHECK(result.reason == MoveResultReason::Ok);
+}
+
+TEST_CASE("requestMove rejects with motion_in_progress for the same piece that is already in flight") {
+    GameEngine game;
+    std::string error;
+    game.loadBoard("Board:\nwR . .\n", error);
+    game.requestMove(Position{0, 0}, Position{0, 2}); // wR: 2000ms in flight
+
+    MoveResult result = game.requestMove(Position{0, 0}, Position{0, 1});
     CHECK_FALSE(result.is_accepted);
     CHECK(result.reason == MoveResultReason::MotionInProgress);
+}
+
+TEST_CASE("two same-color paths crossing mid-flight: the later one stops short, end-to-end through requestMove/wait") {
+    GameEngine game;
+    std::string error;
+    game.loadBoard("Board:\n. . wR . .\n. . . . .\n. . . . wR\n. . . . .\n. . . . .\n", error);
+
+    game.requestMove(Position{2, 4}, Position{2, 0}); // starts at t=0, passes (2,2) at t=2000
+    game.wait(500);
+    game.requestMove(Position{0, 2}, Position{4, 2}); // starts at t=500, passes (2,2) at t=2500 — later
+
+    game.wait(2000); // clock now 2500: the crossing resolves
+    CHECK(game.hasPieceAt(Position{1, 2}));           // stopped one cell short of (2,2)
+    CHECK_FALSE(game.hasPieceAt(Position{2, 2}));
+    CHECK_FALSE(game.hasPieceAt(Position{4, 2}));      // never reached its original destination
+
+    game.wait(1500); // clock now 4000: the first rook's own move completes
+    CHECK(game.hasPieceAt(Position{2, 0}));
+}
+
+TEST_CASE("a mover arriving at a cell a friend already settled bounces back instead of overwriting it") {
+    GameEngine game;
+    std::string error;
+    game.loadBoard("Board:\nwR .\n. .\n. wR\n", error);
+
+    // The first mover settles (and leaves the arbiter's tracking entirely)
+    // in its own wait() call, before the second even starts — so the
+    // second's collision is against settled Board state, not an in-flight
+    // conflict the arbiter itself would already have resolved.
+    game.requestMove(Position{0, 0}, Position{0, 1});
+    game.wait(1000);
+    REQUIRE(game.hasPieceAt(Position{0, 1}));
+
+    game.requestMove(Position{2, 1}, Position{0, 1}); // 2000ms
+    game.wait(2000);
+
+    CHECK(game.hasPieceAt(Position{0, 1}));  // the first mover, untouched
+    CHECK(game.hasPieceAt(Position{2, 1}));  // the second mover, bounced back home
+}
+
+TEST_CASE("a king that loses a mid-flight collision (not a jump) ends the game") {
+    GameEngine game;
+    std::string error;
+    game.loadBoard("Board:\nwK .\n. .\n. .\n. bR\n", error);
+
+    game.requestMove(Position{0, 0}, Position{0, 1}); // wK: arrives (0,1) at t=1000
+    game.requestMove(Position{3, 1}, Position{0, 1}); // bR: arrives (0,1) at t=3000 — later, wK loses
+    game.wait(3000);
+
+    CHECK(game.isGameOver());
+    REQUIRE(game.winner().has_value());
+    CHECK(*game.winner() == PieceColor::Black);
+    CHECK_FALSE(game.hasPieceAt(Position{0, 1})); // wK never lands
+    CHECK(game.hasPieceAt(Position{3, 1}));        // bR's own move is voided once the game is over
 }
 
 TEST_CASE("requestJump starts a motion that keeps the piece airborne") {

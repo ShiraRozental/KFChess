@@ -1,5 +1,6 @@
 #include "realtime/RealTimeArbiter.h"
 #include <algorithm>
+#include <optional>
 #include <utility>
 
 namespace {
@@ -75,21 +76,11 @@ bool RealTimeArbiter::hasActiveMotion() const {
     return false;
 }
 
-// True while a jump is still airborne over the given cell — used by
-// GameEngine to report a clear motion_in_progress rejection when a
-// mid-jump piece is commanded.
-bool RealTimeArbiter::hasJumpAt(Position cell) const {
-    return jumpColorAt(cell).has_value();
-}
-
-// The color of the piece jumping over the given cell, or nullopt if none.
-// Lets GameEngine keep enforcing friendly_destination for a jumping
-// defender RuleEngine can no longer see (it's off the board mid-jump).
-std::optional<PieceColor> RealTimeArbiter::jumpColorAt(Position cell) const {
+bool RealTimeArbiter::hasMotionFrom(Position cell) const {
     for (const Motion& motion : motions_) {
-        if (motion.isJump() && motion.destination() == cell) return motion.piece().color();
+        if (motion.source() == cell) return true;
     }
-    return std::nullopt;
+    return false;
 }
 
 void RealTimeArbiter::startMotion(Piece piece, Position source, Position destination) {
@@ -142,13 +133,15 @@ ArrivalEvents RealTimeArbiter::advanceTime(int ms) {
         if (!motion.isDueBy(clockMs_)) continue;
 
         Piece& piece = motion.piece();
-        if (capturedMidFlight[i]) {
+        bool captured = capturedMidFlight[i];
+        if (captured) {
             piece.setState(Piece::State::Captured);
         } else {
             piece.moveTo(motion.destination());
             piece.setState(Piece::State::Idle);
         }
-        events.push_back(ArrivalEvent{piece, motion.source(), motion.destination(), capturedMidFlight[i]});
+        bool kingCaptured = captured && piece.kind() == PieceType::King;
+        events.push_back(ArrivalEvent{piece, motion.source(), motion.destination(), captured, kingCaptured});
     }
 
     motions_.erase(

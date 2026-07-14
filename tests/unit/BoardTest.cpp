@@ -29,6 +29,27 @@ TEST_CASE("an empty cell returns no piece") {
     CHECK(board.isEmpty(0, 0));
 }
 
+TEST_CASE("pieceCopyAt returns nullopt for an empty or out-of-bounds cell") {
+    Board board(2, 2);
+    CHECK_FALSE(board.pieceCopyAt(0, 0).has_value());
+    CHECK_FALSE(board.pieceCopyAt(-1, 0).has_value());
+    CHECK_FALSE(board.pieceCopyAt(5, 5).has_value());
+}
+
+TEST_CASE("pieceCopyAt returns a detached copy of an occupied cell's piece") {
+    Board board(2, 2);
+    board.addPiece(0, 0, makePiece(7, PieceColor::White, PieceType::Knight, 0, 0));
+
+    std::optional<Piece> copy = board.pieceCopyAt(0, 0);
+    REQUIRE(copy.has_value());
+    CHECK(copy->id() == 7);
+    CHECK(copy->color() == PieceColor::White);
+    CHECK(copy->kind() == PieceType::Knight);
+
+    board.removePiece(0, 0);
+    CHECK(copy.has_value()); // unaffected by the board changing after the copy was taken
+}
+
 TEST_CASE("an occupied cell returns the correct piece") {
     Board board(2, 2);
     board.addPiece(0, 0, makePiece(7, PieceColor::White, PieceType::Knight, 0, 0));

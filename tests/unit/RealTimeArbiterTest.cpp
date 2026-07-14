@@ -113,17 +113,17 @@ TEST_CASE("a jump landing hands the piece back Idle at its own cell") {
     CHECK(events[0].piece.state() == Piece::State::Idle);
 }
 
-TEST_CASE("hasJumpAt reports a jump's cell while airborne, and only a jump's") {
+TEST_CASE("hasMotionFrom reports a source cell for either a move or a jump") {
     RealTimeArbiter arbiter;
     arbiter.startMotion(makePiece(Position{1, 1}, 1), Position{1, 1}, Position{1, 1});
     arbiter.startMotion(makePiece(Position{0, 0}, 2), Position{0, 0}, Position{0, 2});
 
-    CHECK(arbiter.hasJumpAt(Position{1, 1}));
-    CHECK_FALSE(arbiter.hasJumpAt(Position{0, 0})); // a move's source is not a jump
-    CHECK_FALSE(arbiter.hasJumpAt(Position{0, 2})); // a move's destination is not a jump
+    CHECK(arbiter.hasMotionFrom(Position{1, 1}));
+    CHECK(arbiter.hasMotionFrom(Position{0, 0}));
+    CHECK_FALSE(arbiter.hasMotionFrom(Position{0, 2})); // a move's destination is not its source
 
-    arbiter.advanceTime(1000); // jump lands
-    CHECK_FALSE(arbiter.hasJumpAt(Position{1, 1}));
+    arbiter.advanceTime(1000);
+    CHECK_FALSE(arbiter.hasMotionFrom(Position{1, 1})); // jump has landed, no longer tracked
 }
 
 TEST_CASE("an enemy move arriving at a cell with a still-active jump is intercepted") {

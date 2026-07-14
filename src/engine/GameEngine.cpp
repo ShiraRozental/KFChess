@@ -12,52 +12,27 @@ bool GameEngine::loadBoard(const std::string& boardText, std::string& errorMessa
     return BoardTextFormat::parse(in, board_, errorMessage);
 }
 
-// Application-level guards (game_over, motion_in_progress) are checked
-// before RuleEngine is ever consulted; RuleEngine knows nothing about
-// either. A rule-level rejection's reason is copied straight through.
 MoveResult GameEngine::requestMove(const Position& source, const Position& destination) {
     if (isGameOver()) return MoveResult{false, MoveResultReason::GameOver};
-    if (arbiter_.hasActiveMotion()) return MoveResult{false, MoveResultReason::MotionInProgress};
-
-    // A mid-jump piece is airborne — off the board entirely — so validation
-    // below would report empty_source; the truthful reason is that the
-    // piece is mid-motion and cannot be commanded until it lands.
-    if (arbiter_.hasJumpAt(source)) return MoveResult{false, MoveResultReason::MotionInProgress};
-
-    // A friend jumping over the destination is also off the board, so
-    // RuleEngine can't reject the move itself — restore the same
-    // friendly_destination answer it would have given were the jumper home.
-    const Piece* sourcePiece = board_.pieceAt(source.row, source.col);
-    if (sourcePiece && arbiter_.jumpColorAt(destination) == std::optional<PieceColor>(sourcePiece->color())) {
-        return MoveResult{false, MoveRejectionReason::FriendlyDestination};
-    }
+    if (arbiter_.hasMotionFrom(source)) return MoveResult{false, MoveResultReason::MotionInProgress};
 
     MoveValidation validation = validateMove(board_, source.row, source.col, destination.row, destination.col);
     if (!validation.is_valid) return MoveResult{false, validation.reason};
 
-    // Guaranteed non-null: validateMove already confirmed a piece sits here.
-    // The mover leaves the board for the duration of its flight; Motion owns
-    // it until an ArrivalEvent hands it back (see RealTimeArbiter).
-    Piece mover = *sourcePiece;
+    std::optional<Piece> mover = board_.pieceCopyAt(source.row, source.col);
     board_.removePiece(source.row, source.col);
-    arbiter_.startMotion(std::move(mover), source, destination);
+    arbiter_.startMotion(std::move(*mover), source, destination);
     return MoveResult{true, MoveResultReason::Ok};
 }
 
-// Jump is outside the course's minimal API (CLAUDE.md requires it as its
-// own explicit action) but reuses the same underlying motion mechanism: a
-// jump is just a motion whose source equals its destination.
 void GameEngine::requestJump(const Position& cell) {
     if (isGameOver()) return;
 
-    // An empty cell also covers a piece that is already airborne (moving or
-    // jumping) — it is off the board, so there is nothing to command.
-    const Piece* piece = board_.pieceAt(cell.row, cell.col);
-    if (!piece) return;
+    std::optional<Piece> jumper = board_.pieceCopyAt(cell.row, cell.col);
+    if (!jumper) return;
 
-    Piece jumper = *piece;
     board_.removePiece(cell.row, cell.col);
-    arbiter_.startMotion(std::move(jumper), cell, cell);
+    arbiter_.startMotion(std::move(*jumper), cell, cell);
 }
 
 bool GameEngine::hasPieceAt(const Position& pos) const {
@@ -75,7 +50,7 @@ void GameEngine::wait(int ms) {
 
     for (const ArrivalEvent& event : arbiter_.advanceTime(ms)) {
         if (event.intercepted) {
-            if (event.piece.kind() == PieceType::King) {
+            if (event.kingCaptured) {
                 gameState_ = winningStateFor(opponentOf(event.piece.color()));
             }
             continue;
@@ -86,7 +61,12 @@ void GameEngine::wait(int ms) {
             continue;
         }
 
-        const Piece* target = board_.pieceAt(event.to.row, event.to.col);
+        std::optional<Piece> target = board_.pieceCopyAt(event.to.row, event.to.col);
+        if (target && target->color() == event.piece.color()) {
+            landPiece(event.piece, event.from);
+            continue;
+        }
+
         bool capturesKing = target && target->kind() == PieceType::King;
 
         board_.removePiece(event.to.row, event.to.col);

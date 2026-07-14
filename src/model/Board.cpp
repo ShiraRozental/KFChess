@@ -38,6 +38,11 @@ Piece* Board::pieceAt(int row, int col) {
     return const_cast<Piece*>(static_cast<const Board&>(*this).pieceAt(row, col));
 }
 
+std::optional<Piece> Board::pieceCopyAt(int row, int col) const {
+    if (!inBounds(row, col)) return std::nullopt;
+    return grid_[index(row, col)];
+}
+
 // Assumes (row, col) is in bounds — callers only ever reach here after an
 // inBounds check (directly, or by construction as with isPathClear's
 // internal walk between two already-validated cells).
