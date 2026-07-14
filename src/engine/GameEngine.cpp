@@ -74,7 +74,12 @@ void GameEngine::wait(int ms) {
     if (isGameOver()) return;
 
     for (const ArrivalEvent& event : arbiter_.advanceTime(ms)) {
-        if (event.intercepted) continue;
+        if (event.intercepted) {
+            if (event.piece.kind() == PieceType::King) {
+                gameState_ = winningStateFor(opponentOf(event.piece.color()));
+            }
+            continue;
+        }
 
         if (isGameOver()) {
             landPiece(event.piece, event.from);
@@ -141,4 +146,8 @@ std::optional<PieceColor> GameEngine::winner() const {
 // corresponding game outcome.
 GameState GameEngine::winningStateFor(PieceColor color) {
     return color == PieceColor::White ? GameState::WhiteWins : GameState::BlackWins;
+}
+
+PieceColor GameEngine::opponentOf(PieceColor color) {
+    return color == PieceColor::White ? PieceColor::Black : PieceColor::White;
 }

@@ -556,6 +556,21 @@ TEST_CASE("jumping an already-airborne piece is ignored and does not extend its 
     CHECK(out.str() == ". . . .\nbR . . .\n. . . .\n");
 }
 
+TEST_CASE("a king intercepted by an enemy's active jump loses the game immediately") {
+    GameEngine game;
+    std::string error;
+    game.loadBoard("Board:\nwK bP .\n", error);
+    game.requestJump(Position{0, 1});                      // bP jumps, airborne until t=1000
+    game.requestMove(Position{0, 0}, Position{0, 1});       // wK attacks bP's cell, arrives at t=1000
+    game.wait(1000);
+
+    CHECK(game.isGameOver());
+    REQUIRE(game.winner().has_value());
+    CHECK(*game.winner() == PieceColor::Black);
+    CHECK(game.hasPieceAt(Position{0, 1}));                 // bP survives
+    CHECK_FALSE(game.hasPieceAt(Position{0, 0}));           // wK never lands anywhere
+}
+
 // The tests below exercise GameEngine's public API directly, in Position
 // terms, with no pixels and no TextTestRunner/Controller involved.
 

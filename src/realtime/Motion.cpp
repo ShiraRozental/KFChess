@@ -75,6 +75,26 @@ Position Motion::currentCellAt(long long clockMs) const {
     return cell;
 }
 
+long long Motion::startTimeMs() const { return waypoints_.front().second; }
+
+Motion::Waypoints Motion::arrivalPoints() const {
+    return Waypoints(waypoints_.begin() + 1, waypoints_.end());
+}
+
+void Motion::stopBeforeReaching(Position cell) {
+    auto it = std::find_if(waypoints_.begin(), waypoints_.end(),
+        [&](const auto& waypoint) { return waypoint.first == cell; });
+    waypoints_.erase(it, waypoints_.end());
+    destination_ = waypoints_.back().first;
+}
+
+void Motion::stopAtReaching(Position cell) {
+    auto it = std::find_if(waypoints_.begin(), waypoints_.end(),
+        [&](const auto& waypoint) { return waypoint.first == cell; });
+    waypoints_.erase(it + 1, waypoints_.end());
+    destination_ = waypoints_.back().first;
+}
+
 Piece& Motion::piece() { return piece_; }
 const Piece& Motion::piece() const { return piece_; }
 Position Motion::source() const { return source_; }

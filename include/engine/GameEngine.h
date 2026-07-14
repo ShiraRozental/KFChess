@@ -47,6 +47,7 @@ private:
     void landPiece(Piece piece, Position cell);
     void promoteIfNeeded(int row, int col, PieceType type, PieceColor color);
     static GameState winningStateFor(PieceColor color);
+    static PieceColor opponentOf(PieceColor color);
 
     Board board_;
     RealTimeArbiter arbiter_;

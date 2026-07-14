@@ -27,14 +27,22 @@ public:
 
     bool isJump() const;
     bool isDueBy(long long clockMs) const;
-
-    // The cell this motion's piece currently occupies at the given clock
-    // time: the last waypoint already entered by then. For a straight or
-    // diagonal move this walks through every intervening cell one at a
-    // time (matching Board::isPathClear's notion of "the line between
-    // source and destination"); a knight's shape has no such line, so it
-    // only ever reports source until the instant it reports destination.
     Position currentCellAt(long long clockMs) const;
+
+    long long startTimeMs() const;
+    // Every waypoint except the source (nothing "arrives" there — it's
+    // already vacated at start), each paired with its entry time. Empty
+    // once a motion has been collapsed all the way back to its own source
+    // (see stopBeforeReaching) — such a motion has nothing left to arrive
+    // anywhere with.
+    Waypoints arrivalPoints() const;
+    // Same-color near-collision: the motion never reaches cell — it stops
+    // at the waypoint just before it (its own source, for a shape with no
+    // intermediate cells).
+    void stopBeforeReaching(Position cell);
+    // Opposite-color collision: the motion is captured exactly at cell —
+    // it becomes the new (earlier) destination.
+    void stopAtReaching(Position cell);
 
     Piece& piece();
     const Piece& piece() const;
@@ -48,7 +56,8 @@ private:
     Position source_;
     Position destination_;
 
-    // Always has at least two entries: (source, start time) ...
-    // (destination, arrival time).
+    // (source, start time) ... (destination, arrival time). At least one
+    // entry always; only one left once stopBeforeReaching collapses a
+    // motion back to its own source.
     Waypoints waypoints_;
 };

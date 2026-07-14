@@ -8,9 +8,9 @@
 
 // A single motion that has resolved, carrying its piece back to the caller.
 // A normal landing (intercepted == false) means the piece should be placed
-// at `to` (for a jump, to == from). An intercepted motion — a move that
-// arrived at a cell protected by a still-active jump — means the mover
-// never lands: its piece is Captured and should simply be discarded.
+// at `to` (for a jump, to == from). intercepted == true means the piece
+// was captured while still in flight — by an active jump's defense, or by
+// losing a collision to another in-flight piece — and never lands.
 struct ArrivalEvent {
     Piece piece;
     Position from;
@@ -46,6 +46,8 @@ public:
     std::vector<InFlightPiece> inFlightPieces() const;
 
 private:
+    void resolveConflicts(std::vector<bool>& capturedMidFlight);
+
     long long clockMs_ = 0;
     std::vector<Motion> motions_;
 };
