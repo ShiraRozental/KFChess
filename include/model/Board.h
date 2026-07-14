@@ -23,6 +23,7 @@ public:
     void removePiece(int row, int col);
 
     const Piece* pieceAt(int row, int col) const;
+    Piece* pieceAt(int row, int col);
 
     bool isEmpty(int row, int col) const;
     bool isSameColor(int row1, int col1, int row2, int col2) const;

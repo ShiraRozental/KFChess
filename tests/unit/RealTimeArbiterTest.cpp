@@ -1,5 +1,5 @@
 #include "doctest/doctest.h"
-#include "engine/RealTimeArbiter.h"
+#include "realtime/RealTimeArbiter.h"
 
 namespace {
     Piece makePiece(Position cell) {

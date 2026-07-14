@@ -34,6 +34,10 @@ const Piece* Board::pieceAt(int row, int col) const {
     return cell.has_value() ? &(*cell) : nullptr;
 }
 
+Piece* Board::pieceAt(int row, int col) {
+    return const_cast<Piece*>(static_cast<const Board&>(*this).pieceAt(row, col));
+}
+
 // Assumes (row, col) is in bounds — callers only ever reach here after an
 // inBounds check (directly, or by construction as with isPathClear's
 // internal walk between two already-validated cells).
