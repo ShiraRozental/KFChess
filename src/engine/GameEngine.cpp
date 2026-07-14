@@ -4,6 +4,7 @@
 #include "rules/RuleEngine.h"
 #include "rules/MovementRuleFactory.h"
 #include <sstream>
+#include <utility>
 
 // Loads a board description into the game object.
 bool GameEngine::loadBoard(const std::string& boardText, std::string& errorMessage) {
@@ -18,19 +19,28 @@ MoveResult GameEngine::requestMove(const Position& source, const Position& desti
     if (isGameOver()) return MoveResult{false, MoveResultReason::GameOver};
     if (arbiter_.hasActiveMotion()) return MoveResult{false, MoveResultReason::MotionInProgress};
 
+    // A mid-jump piece is airborne — off the board entirely — so validation
+    // below would report empty_source; the truthful reason is that the
+    // piece is mid-motion and cannot be commanded until it lands.
+    if (arbiter_.hasJumpAt(source)) return MoveResult{false, MoveResultReason::MotionInProgress};
+
+    // A friend jumping over the destination is also off the board, so
+    // RuleEngine can't reject the move itself — restore the same
+    // friendly_destination answer it would have given were the jumper home.
+    const Piece* sourcePiece = board_.pieceAt(source.row, source.col);
+    if (sourcePiece && arbiter_.jumpColorAt(destination) == std::optional<PieceColor>(sourcePiece->color())) {
+        return MoveResult{false, MoveRejectionReason::FriendlyDestination};
+    }
+
     MoveValidation validation = validateMove(board_, source.row, source.col, destination.row, destination.col);
     if (!validation.is_valid) return MoveResult{false, validation.reason};
 
     // Guaranteed non-null: validateMove already confirmed a piece sits here.
-    Piece* mover = board_.pieceAt(source.row, source.col);
-
-    // hasActiveMotion() only reports real moves (see RealTimeArbiter), so a
-    // piece that's currently jumping wouldn't otherwise be caught here.
-    if (mover->state() == Piece::State::Moving) {
-        return MoveResult{false, MoveResultReason::MotionInProgress};
-    }
-
-    arbiter_.startMotion(*mover, source, destination);
+    // The mover leaves the board for the duration of its flight; Motion owns
+    // it until an ArrivalEvent hands it back (see RealTimeArbiter).
+    Piece mover = *sourcePiece;
+    board_.removePiece(source.row, source.col);
+    arbiter_.startMotion(std::move(mover), source, destination);
     return MoveResult{true, MoveResultReason::Ok};
 }
 
@@ -40,11 +50,14 @@ MoveResult GameEngine::requestMove(const Position& source, const Position& desti
 void GameEngine::requestJump(const Position& cell) {
     if (isGameOver()) return;
 
-    Piece* piece = board_.pieceAt(cell.row, cell.col);
+    // An empty cell also covers a piece that is already airborne (moving or
+    // jumping) — it is off the board, so there is nothing to command.
+    const Piece* piece = board_.pieceAt(cell.row, cell.col);
     if (!piece) return;
-    if (piece->state() == Piece::State::Moving) return;
 
-    arbiter_.startMotion(*piece, cell, cell);
+    Piece jumper = *piece;
+    board_.removePiece(cell.row, cell.col);
+    arbiter_.startMotion(std::move(jumper), cell, cell);
 }
 
 bool GameEngine::hasPieceAt(const Position& pos) const {
@@ -52,39 +65,52 @@ bool GameEngine::hasPieceAt(const Position& pos) const {
 }
 
 // Advances simulated time and applies every motion RealTimeArbiter reports
-// as arrived. An intercepted attacker never lands: it's simply removed
-// from its origin, leaving the defender (whose jump protected the cell)
-// untouched. If a captured piece is a king, the game ends immediately and
-// any further due arrivals in this same batch are left unapplied.
+// as arrived. An intercepted attacker never lands: its piece is simply
+// discarded, leaving the defender (whose jump protected the cell)
+// untouched. If a captured piece is a king, the game ends immediately;
+// motions still due in this same batch are voided and their pieces return
+// to where they took off from, so no piece ever vanishes from the board.
 void GameEngine::wait(int ms) {
     if (isGameOver()) return;
 
     for (const ArrivalEvent& event : arbiter_.advanceTime(ms)) {
-        if (isGameOver()) break;
+        if (event.intercepted) continue;
 
-        if (event.intercepted) {
-            board_.removePiece(event.from.row, event.from.col);
+        if (isGameOver()) {
+            landPiece(event.piece, event.from);
             continue;
         }
 
-        const Piece* mover = board_.pieceAt(event.from.row, event.from.col);
         const Piece* target = board_.pieceAt(event.to.row, event.to.col);
         bool capturesKing = target && target->kind() == PieceType::King;
-        PieceColor moverColor = mover->color();
-        PieceType movedType = mover->kind();
 
-        board_.movePiece(event.from.row, event.from.col, event.to.row, event.to.col);
+        board_.removePiece(event.to.row, event.to.col);
+        landPiece(event.piece, event.to);
 
         if (capturesKing) {
-            gameState_ = winningStateFor(moverColor);
+            gameState_ = winningStateFor(event.piece.color());
         }
 
-        promoteIfNeeded(event.to.row, event.to.col, movedType, moverColor);
+        promoteIfNeeded(event.to.row, event.to.col, event.piece.kind(), event.piece.color());
     }
 }
 
+// The snapshot's board is a display composition: the settled board plus
+// every in-flight piece shown at its current cell, so a piece mid-motion
+// never "disappears" from a printed board or a renderer.
 GameSnapshot GameEngine::snapshot() const {
-    return GameSnapshot(board_, isGameOver(), winner());
+    Board display = board_;
+    for (const InFlightPiece& flier : arbiter_.inFlightPieces()) {
+        display.addPiece(flier.cell.row, flier.cell.col, flier.piece);
+    }
+    return GameSnapshot(std::move(display), isGameOver(), winner());
+}
+
+// Places a piece whose flight has resolved (normally, or voided by the game
+// ending mid-batch) back onto the board at the given cell.
+void GameEngine::landPiece(Piece piece, Position cell) {
+    piece.moveTo(cell);
+    board_.addPiece(cell.row, cell.col, std::move(piece));
 }
 
 // Promotes the piece now sitting at (row, col) to a queen if its movement

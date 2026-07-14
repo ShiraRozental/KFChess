@@ -50,8 +50,12 @@ TEST_CASE("a jump is due after 1000ms regardless of distance (source equals dest
     CHECK(motion.isDueBy(1000));
 }
 
-TEST_CASE("piece() returns the same piece object the motion was created with") {
+TEST_CASE("a motion owns its own copy of the piece, detached from the original") {
     Piece piece = makePiece(Position{0, 0});
     Motion motion = Motion::move(piece, Position{0, 0}, Position{0, 1}, 0);
-    CHECK(&motion.piece() == &piece);
+    CHECK(motion.piece().id() == piece.id());
+
+    // Mutating the motion's piece must never touch the caller's original.
+    motion.piece().setState(Piece::State::Moving);
+    CHECK(piece.state() == Piece::State::Idle);
 }

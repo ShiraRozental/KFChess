@@ -615,6 +615,54 @@ TEST_CASE("requestJump starts a motion that keeps the piece airborne") {
     CHECK_FALSE(game.hasPieceAt(Position{1, 1}));
 }
 
+TEST_CASE("a printed board still shows a mid-flight piece at its source until it arrives") {
+    GameEngine game;
+    std::string error;
+    game.loadBoard("Board:\nwR . .\n", error);
+    TextTestRunner runner(game);
+    std::ostringstream out;
+    game.requestMove(Position{0, 0}, Position{0, 2}); // 2000ms in flight
+    runner.executeLine("wait 500", out);              // mid-flight
+    runner.executeLine("print board", out);
+    CHECK(out.str() == "wR . .\n");
+}
+
+TEST_CASE("a mid-flight piece's source cell reads as empty to hasPieceAt") {
+    GameEngine game;
+    std::string error;
+    game.loadBoard("Board:\nwR . .\n", error);
+    game.requestMove(Position{0, 0}, Position{0, 2}); // 2000ms in flight
+    game.wait(500);
+
+    // The piece has left the board for the duration of its flight — it can
+    // no longer be selected or commanded, which is exactly the movement
+    // lock: a piece mid-walk cannot be told to go somewhere new.
+    CHECK_FALSE(game.hasPieceAt(Position{0, 0}));
+}
+
+TEST_CASE("requestMove on a mid-jump piece is rejected with motion_in_progress") {
+    GameEngine game;
+    std::string error;
+    game.loadBoard("Board:\nwK . .\n", error);
+    game.requestJump(Position{0, 0}); // airborne until t=1000
+
+    MoveResult result = game.requestMove(Position{0, 0}, Position{0, 1});
+    CHECK_FALSE(result.is_accepted);
+    CHECK(result.reason == MoveResultReason::MotionInProgress);
+}
+
+TEST_CASE("a king mid-jump never disappears from the printed board") {
+    GameEngine game;
+    std::string error;
+    game.loadBoard("Board:\nwK . bR\n", error);
+    TextTestRunner runner(game);
+    std::ostringstream out;
+    game.requestJump(Position{0, 0}); // airborne until t=1000
+    runner.executeLine("wait 500", out);
+    runner.executeLine("print board", out);
+    CHECK(out.str() == "wK . bR\n");
+}
+
 TEST_CASE("hasPieceAt distinguishes occupied cells from empty ones") {
     GameEngine game;
     std::string error;

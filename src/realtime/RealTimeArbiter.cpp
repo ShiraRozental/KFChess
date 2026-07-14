@@ -1,5 +1,6 @@
 #include "realtime/RealTimeArbiter.h"
 #include <algorithm>
+#include <utility>
 
 // True only when a real move is in flight. A jump never counts, so it can
 // never block, or be blocked by, another move.
@@ -10,39 +11,57 @@ bool RealTimeArbiter::hasActiveMotion() const {
     return false;
 }
 
-void RealTimeArbiter::startMotion(Piece& piece, Position source, Position destination) {
+// True while a jump is still airborne over the given cell — used by
+// GameEngine to report a clear motion_in_progress rejection when a
+// mid-jump piece is commanded.
+bool RealTimeArbiter::hasJumpAt(Position cell) const {
+    return jumpColorAt(cell).has_value();
+}
+
+// The color of the piece jumping over the given cell, or nullopt if no
+// jump is airborne there. Lets GameEngine keep enforcing
+// friendly_destination for a defender RuleEngine can no longer see (an
+// airborne piece is off the board), and lets interception below apply only
+// to enemies.
+std::optional<PieceColor> RealTimeArbiter::jumpColorAt(Position cell) const {
+    for (const Motion& motion : motions_) {
+        if (motion.isJump() && motion.destination() == cell) return motion.piece().color();
+    }
+    return std::nullopt;
+}
+
+void RealTimeArbiter::startMotion(Piece piece, Position source, Position destination) {
     piece.setState(Piece::State::Moving);
     motions_.push_back(source == destination
-        ? Motion::jump(piece, source, clockMs_)
-        : Motion::move(piece, source, destination, clockMs_));
+        ? Motion::jump(std::move(piece), source, clockMs_)
+        : Motion::move(std::move(piece), source, destination, clockMs_));
 }
 
 // Advances the clock and resolves every motion whose arrival time has now
-// passed. Interception is checked against the *full* still-tracked motion
-// list before anything is removed, so a jump landing in this same tick
-// still counts as protecting its cell (see class comment).
+// passed, handing each piece back through an ArrivalEvent. Interception is
+// checked against the *full* still-tracked motion list before anything is
+// removed, so a jump landing in this same tick still counts as protecting
+// its cell (see class comment).
 ArrivalEvents RealTimeArbiter::advanceTime(int ms) {
     clockMs_ += ms;
 
-    auto isProtectedByActiveJump = [&](Position cell) {
-        for (const Motion& motion : motions_) {
-            if (motion.isJump() && motion.destination() == cell) return true;
-        }
-        return false;
-    };
-
     ArrivalEvents events;
-    for (const Motion& motion : motions_) {
+    for (Motion& motion : motions_) {
         if (!motion.isDueBy(clockMs_)) continue;
 
-        if (motion.isJump()) {
-            motion.piece().setState(Piece::State::Idle);
-            continue;
+        // Interception only protects against enemies: a jump was never a
+        // way to capture a friend that arrives at the same cell.
+        std::optional<PieceColor> jumperColor = jumpColorAt(motion.destination());
+        bool intercepted = !motion.isJump()
+            && jumperColor.has_value() && *jumperColor != motion.piece().color();
+        Piece& piece = motion.piece();
+        if (intercepted) {
+            piece.setState(Piece::State::Captured);
+        } else {
+            piece.moveTo(motion.destination());
+            piece.setState(Piece::State::Idle);
         }
-
-        bool intercepted = isProtectedByActiveJump(motion.destination());
-        motion.piece().setState(intercepted ? Piece::State::Captured : Piece::State::Idle);
-        events.push_back(ArrivalEvent{motion.source(), motion.destination(), intercepted});
+        events.push_back(ArrivalEvent{piece, motion.source(), motion.destination(), intercepted});
     }
 
     motions_.erase(
@@ -50,4 +69,15 @@ ArrivalEvents RealTimeArbiter::advanceTime(int ms) {
             [&](const Motion& motion) { return motion.isDueBy(clockMs_); }),
         motions_.end());
     return events;
+}
+
+// Copies of every in-flight piece with its display cell, so GameEngine can
+// compose a snapshot in which mid-motion pieces never disappear.
+std::vector<InFlightPiece> RealTimeArbiter::inFlightPieces() const {
+    std::vector<InFlightPiece> fliers;
+    fliers.reserve(motions_.size());
+    for (const Motion& motion : motions_) {
+        fliers.push_back(InFlightPiece{motion.piece(), motion.source()});
+    }
+    return fliers;
 }

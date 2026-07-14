@@ -44,6 +44,7 @@ public:
     std::optional<PieceColor> winner() const;
 
 private:
+    void landPiece(Piece piece, Position cell);
     void promoteIfNeeded(int row, int col, PieceType type, PieceColor color);
     static GameState winningStateFor(PieceColor color);
 
