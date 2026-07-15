@@ -13,3 +13,6 @@ struct PieceCode {
 bool isEmptyToken(const std::string& token);
 std::optional<PieceCode> pieceFromToken(const std::string& token);
 std::string encodeCell(const Piece* piece);
+
+char pieceTypeToChar(PieceType type);
+char pieceColorToChar(PieceColor color);
