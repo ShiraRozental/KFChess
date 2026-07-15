@@ -102,9 +102,8 @@ void GameEngine::landPiece(Piece piece, Position cell, bool wasJump) {
     PieceId id = piece.id();
     PieceType kind = piece.kind();
     board_.addPiece(cell.row, cell.col, std::move(piece));
-    if (!wasJump) {
-        arbiter_.startCooldown(id, cell, cooldownDurationMsFor(kind));
-    }
+    long long cooldownMs = wasJump ? jumpCooldownDurationMs() : cooldownDurationMsFor(kind);
+    arbiter_.startCooldown(id, cell, cooldownMs);
 }
 
 // Promotes the piece now sitting at (row, col) to a queen if its movement

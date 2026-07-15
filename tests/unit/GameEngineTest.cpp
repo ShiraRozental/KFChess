@@ -280,18 +280,45 @@ TEST_CASE("a piece that just landed from a move cannot jump for defense until it
     CHECK(*game.winner() == PieceColor::Black);
 }
 
-TEST_CASE("a piece can move immediately after a jump lands, with no additional cooldown") {
+TEST_CASE("a piece cannot move immediately after a jump lands, until its short cooldown elapses") {
     GameEngine game = makeGame("Board:\n. . .\nwK . .\n. . .\n");
     Controller controller = makeController(game);
     std::ostringstream out;
     ScriptRunner runner(controller, game, out);
-    runLine(runner, "jump 50 150");
+    runLine(runner, "jump 50 150");   // wK at (1,0) jumps, airborne until t=1000
+    runLine(runner, "wait 1000");     // jump lands, jump cooldown starts
+    runLine(runner, "click 50 150");  // attempt to select and move it right away
+    runLine(runner, "click 150 150");
     runLine(runner, "wait 1000");
+    runLine(runner, "print board");
+    CHECK(out.str() == ". . .\nwK . .\n. . .\n");
+}
+
+TEST_CASE("a piece can move again once its jump cooldown has fully elapsed") {
+    GameEngine game = makeGame("Board:\n. . .\nwK . .\n. . .\n");
+    Controller controller = makeController(game);
+    std::ostringstream out;
+    ScriptRunner runner(controller, game, out);
+    runLine(runner, "jump 50 150");   // wK at (1,0) jumps, airborne until t=1000
+    runLine(runner, "wait 1000");     // jump lands, jump cooldown starts
+    runLine(runner, "wait 500");      // jump cooldown (500ms) fully elapses
     runLine(runner, "click 50 150");
     runLine(runner, "click 150 150");
     runLine(runner, "wait 1000");
     runLine(runner, "print board");
     CHECK(out.str() == ". . .\n. wK .\n. . .\n");
+}
+
+TEST_CASE("requestJump is rejected while a piece is still cooling down from a previous jump") {
+    GameEngine game = makeGame("Board:\nwK . .\n");
+    game.requestJump(Position{0, 0}); // airborne until t=1000
+    game.wait(1000);                   // lands, jump cooldown (500ms) starts
+
+    game.requestJump(Position{0, 0}); // rejected: still cooling down, must not restart the cooldown window
+    game.wait(500);                    // exactly the original jump cooldown's duration
+
+    MoveResult result = game.requestMove(Position{0, 0}, Position{0, 1});
+    CHECK(result.is_accepted); // the rejected second jump did not extend the cooldown
 }
 
 TEST_CASE("requestMove rejects with cooling_down for a piece still resting after its last move") {
