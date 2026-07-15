@@ -22,6 +22,9 @@ CMakeFiles/
 cmake_install.cmake
 compile_commands.json
 
+# Vendored third-party binaries - not shared via git, restore via course materials
+third_party/OpenCV_451/
+
 # Local working notes - not shared via git
 PLAN.md
 PROJECT_WALKTHROUGH.md
