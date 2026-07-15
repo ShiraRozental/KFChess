@@ -14,7 +14,7 @@ list(REMOVE_ITEM CORE_SOURCES ${VIEW_SOURCES})
 # נקודת הכניסה של האפליקציה יושבת מחוץ ל-src/ (מקביל ל-app.py)
 add_executable(KFChess Main.cpp ${CORE_SOURCES} ${VIEW_SOURCES})
 
-target_include_directories(KFChess PRIVATE include)
+target_include_directories(KFChess PRIVATE include third_party)
 
 # --- OpenCV (מגיע ארוז בפרויקט תחת third_party/, בלי צורך בהתקנת מערכת) ---
 set(OPENCV_DIR "${CMAKE_CURRENT_SOURCE_DIR}/third_party/OpenCV_451")
@@ -58,8 +58,13 @@ if(BUILD_TESTS)
     file(GLOB_RECURSE TEST_SOURCES "tests/*.cpp")
 
     add_executable(KFChessTests ${TEST_SOURCES} ${CORE_SOURCES})
-    target_include_directories(KFChessTests PRIVATE include)
+    target_include_directories(KFChessTests PRIVATE include third_party)
     target_link_libraries(KFChessTests PRIVATE doctest::doctest)
+
+    # נתיב מוחלט לקבצי ה-fixtures, כדי שהטסטים ימצאו אותם בלי תלות בתיקיית
+    # העבודה שממנה מריצים את KFChessTests (build/ מול build_tests/ וכו').
+    target_compile_definitions(KFChessTests PRIVATE
+        TEST_FIXTURES_DIR="${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures")
 
     if(ENABLE_COVERAGE)
         target_compile_options(KFChessTests PRIVATE --coverage -O0 -g)
