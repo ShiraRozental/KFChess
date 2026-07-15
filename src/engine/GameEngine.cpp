@@ -3,6 +3,7 @@
 #include "model/Piece.h"
 #include "rules/RuleEngine.h"
 #include "rules/MovementRuleFactory.h"
+#include "realtime/CooldownConfig.h"
 #include <sstream>
 #include <utility>
 
@@ -16,12 +17,17 @@ MoveResult GameEngine::requestMove(const Position& source, const Position& desti
     if (isGameOver()) return MoveResult{false, MoveResultReason::GameOver};
     if (arbiter_.hasMotionFrom(source)) return MoveResult{false, MoveResultReason::MotionInProgress};
 
+    const Piece* mover = board_.pieceAt(source.row, source.col);
+    if (mover && arbiter_.isCoolingDown(mover->id())) {
+        return MoveResult{false, MoveResultReason::CoolingDown};
+    }
+
     MoveValidation validation = validateMove(board_, source.row, source.col, destination.row, destination.col);
     if (!validation.is_valid) return MoveResult{false, validation.reason};
 
-    std::optional<Piece> mover = board_.pieceCopyAt(source.row, source.col);
+    std::optional<Piece> movingPiece = board_.pieceCopyAt(source.row, source.col);
     board_.removePiece(source.row, source.col);
-    arbiter_.startMotion(std::move(*mover), source, destination);
+    arbiter_.startMotion(std::move(*movingPiece), source, destination);
     return MoveResult{true, MoveResultReason::Ok};
 }
 
@@ -30,6 +36,7 @@ void GameEngine::requestJump(const Position& cell) {
 
     std::optional<Piece> jumper = board_.pieceCopyAt(cell.row, cell.col);
     if (!jumper) return;
+    if (arbiter_.isCoolingDown(jumper->id())) return;
 
     board_.removePiece(cell.row, cell.col);
     arbiter_.startMotion(std::move(*jumper), cell, cell);
@@ -56,21 +63,23 @@ void GameEngine::wait(int ms) {
             continue;
         }
 
+        bool wasJump = (event.from == event.to);
+
         if (isGameOver()) {
-            landPiece(event.piece, event.from);
+            landPiece(event.piece, event.from, wasJump);
             continue;
         }
 
         std::optional<Piece> target = board_.pieceCopyAt(event.to.row, event.to.col);
         if (target && target->color() == event.piece.color()) {
-            landPiece(event.piece, event.from);
+            landPiece(event.piece, event.from, wasJump);
             continue;
         }
 
         bool capturesKing = target && target->kind() == PieceType::King;
 
         board_.removePiece(event.to.row, event.to.col);
-        landPiece(event.piece, event.to);
+        landPiece(event.piece, event.to, wasJump);
 
         if (capturesKing) {
             gameState_ = winningStateFor(event.piece.color());
@@ -93,9 +102,14 @@ GameSnapshot GameEngine::snapshot() const {
 
 // Places a piece whose flight has resolved (normally, or voided by the game
 // ending mid-batch) back onto the board at the given cell.
-void GameEngine::landPiece(Piece piece, Position cell) {
+void GameEngine::landPiece(Piece piece, Position cell, bool wasJump) {
     piece.moveTo(cell);
+    PieceId id = piece.id();
+    PieceType kind = piece.kind();
     board_.addPiece(cell.row, cell.col, std::move(piece));
+    if (!wasJump) {
+        arbiter_.startCooldown(id, cell, cooldownDurationMsFor(kind));
+    }
 }
 
 // Promotes the piece now sitting at (row, col) to a queen if its movement

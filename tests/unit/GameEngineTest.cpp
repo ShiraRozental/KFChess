@@ -239,20 +239,80 @@ TEST_CASE("a redirect attempt while moving does not cancel the original pending 
         ". . wR\n. . .\n. . .\n");
 }
 
-TEST_CASE("a piece can move again immediately after arriving, with no extra wait") {
+TEST_CASE("a piece cannot move again immediately after arriving, until its cooldown elapses") {
     GameEngine game;
     std::string error;
     game.loadBoard("Board:\nwK . .\n. . .\n. . .\n", error);
     TextTestRunner runner(game);
     std::ostringstream out;
-    runner.executeLine("click 50 50", out);   // select wK at (0,0)
-    runner.executeLine("click 150 50", out);  // move to (0,1), 1000ms
-    runner.executeLine("wait 1000", out);     // arrives
-    runner.executeLine("click 150 50", out);  // select wK at its new position (0,1)
-    runner.executeLine("click 250 50", out);  // move to (0,2), 1000ms: no extra cooldown needed
+    runner.executeLine("click 50 50", out);
+    runner.executeLine("click 150 50", out);
+    runner.executeLine("wait 1000", out);
+    runner.executeLine("click 150 50", out);
+    runner.executeLine("click 250 50", out);
+    runner.executeLine("wait 1000", out);
+    runner.executeLine("print board", out);
+    CHECK(out.str() == ". wK .\n. . .\n. . .\n");
+}
+
+TEST_CASE("a piece can move again once its cooldown has fully elapsed") {
+    GameEngine game;
+    std::string error;
+    game.loadBoard("Board:\nwK . .\n. . .\n. . .\n", error);
+    TextTestRunner runner(game);
+    std::ostringstream out;
+    runner.executeLine("click 50 50", out);
+    runner.executeLine("click 150 50", out);
+    runner.executeLine("wait 1000", out);
+    runner.executeLine("wait 1000", out);
+    runner.executeLine("click 150 50", out);
+    runner.executeLine("click 250 50", out);
     runner.executeLine("wait 1000", out);
     runner.executeLine("print board", out);
     CHECK(out.str() == ". . wK\n. . .\n. . .\n");
+}
+
+TEST_CASE("a piece that just landed from a move cannot jump for defense until its cooldown elapses") {
+    GameEngine game;
+    std::string error;
+    game.loadBoard("Board:\nwK . .\n. bR .\n", error);
+    game.requestMove(Position{0, 0}, Position{0, 1});
+    game.wait(1000);
+
+    game.requestJump(Position{0, 1});
+    game.requestMove(Position{1, 1}, Position{0, 1});
+    game.wait(1000);
+
+    CHECK(game.isGameOver());
+    REQUIRE(game.winner().has_value());
+    CHECK(*game.winner() == PieceColor::Black);
+}
+
+TEST_CASE("a piece can move immediately after a jump lands, with no additional cooldown") {
+    GameEngine game;
+    std::string error;
+    game.loadBoard("Board:\n. . .\nwK . .\n. . .\n", error);
+    TextTestRunner runner(game);
+    std::ostringstream out;
+    runner.executeLine("jump 50 150", out);
+    runner.executeLine("wait 1000", out);
+    runner.executeLine("click 50 150", out);
+    runner.executeLine("click 150 150", out);
+    runner.executeLine("wait 1000", out);
+    runner.executeLine("print board", out);
+    CHECK(out.str() == ". . .\n. wK .\n. . .\n");
+}
+
+TEST_CASE("requestMove rejects with cooling_down for a piece still resting after its last move") {
+    GameEngine game;
+    std::string error;
+    game.loadBoard("Board:\nwR . .\n", error);
+    game.requestMove(Position{0, 0}, Position{0, 1}); // 1000ms
+    game.wait(1000);                                   // arrives, cooldown starts
+
+    MoveResult result = game.requestMove(Position{0, 1}, Position{0, 2});
+    CHECK_FALSE(result.is_accepted);
+    CHECK(result.reason == MoveResultReason::CoolingDown);
 }
 
 TEST_CASE("redirect is blocked even when the new destination would otherwise be a legal move") {

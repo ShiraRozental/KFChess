@@ -90,6 +90,17 @@ void RealTimeArbiter::startMotion(Piece piece, Position source, Position destina
         : Motion::move(std::move(piece), source, destination, clockMs_));
 }
 
+void RealTimeArbiter::startCooldown(PieceId pieceId, Position cell, long long durationMs) {
+    cooldowns_.emplace_back(pieceId, cell, durationMs);
+}
+
+bool RealTimeArbiter::isCoolingDown(PieceId pieceId) const {
+    for (const Cooldown& cooldown : cooldowns_) {
+        if (cooldown.pieceId() == pieceId) return true;
+    }
+    return false;
+}
+
 // Repeatedly finds and applies the single earliest still-unresolved
 // conflict among all pairs of tracked motions, until none remain at or
 // before the current clock. Applying a conflict collapses the loser's
@@ -123,6 +134,14 @@ void RealTimeArbiter::resolveConflicts(std::vector<bool>& capturedMidFlight) {
 // every motion whose (possibly now-collapsed) arrival time has passed.
 ArrivalEvents RealTimeArbiter::advanceTime(int ms) {
     clockMs_ += ms;
+
+    for (Cooldown& cooldown : cooldowns_) {
+        cooldown.advance(ms);
+    }
+    cooldowns_.erase(
+        std::remove_if(cooldowns_.begin(), cooldowns_.end(),
+            [](const Cooldown& cooldown) { return cooldown.hasElapsed(); }),
+        cooldowns_.end());
 
     std::vector<bool> capturedMidFlight(motions_.size(), false);
     resolveConflicts(capturedMidFlight);

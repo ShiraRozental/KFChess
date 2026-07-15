@@ -4,24 +4,14 @@
 #include <utility>
 
 namespace {
-    // CELL_SIZE (100px) / PIECE_SPEED (100px/s) = 1000ms per cell of
-    // Chebyshev distance travelled. A jump's short defensive window uses
-    // the same duration.
+    
     constexpr long long kMoveDurationPerCellMs = 1000;
     constexpr long long kJumpDurationMs = 1000;
 
-    // Chebyshev distance: straight and diagonal steps both count as one
-    // cell of travel, matching how every piece's shape is defined in terms
-    // of row/column deltas (not Euclidean pixel distance).
     int cellDistance(Position from, Position to) {
         return std::max(std::abs(to.row - from.row), std::abs(to.col - from.col));
     }
 
-    // Same geometric test as Board::isPathClear: is there a well-defined
-    // straight/diagonal line of cells between source and destination? A
-    // knight's shape (and any other non-straight/non-diagonal shape) has
-    // no such line, so its motion has nothing to walk through — only its
-    // two endpoints matter for display purposes.
     bool isStraightOrDiagonal(int dRow, int dCol) {
         return dRow == 0 || dCol == 0 || std::abs(dRow) == std::abs(dCol);
     }

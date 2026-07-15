@@ -13,6 +13,32 @@ TEST_CASE("hasActiveMotion is false with nothing in flight") {
     CHECK_FALSE(arbiter.hasActiveMotion());
 }
 
+TEST_CASE("isCoolingDown is false for a piece with no cooldown started") {
+    RealTimeArbiter arbiter;
+    CHECK_FALSE(arbiter.isCoolingDown(1));
+}
+
+TEST_CASE("starting a cooldown makes isCoolingDown true for that piece id") {
+    RealTimeArbiter arbiter;
+    arbiter.startCooldown(1, Position{0, 0}, 1000);
+    CHECK(arbiter.isCoolingDown(1));
+}
+
+TEST_CASE("isCoolingDown becomes false once advanceTime passes the cooldown's duration") {
+    RealTimeArbiter arbiter;
+    arbiter.startCooldown(1, Position{0, 0}, 1000);
+    arbiter.advanceTime(999);
+    CHECK(arbiter.isCoolingDown(1));
+    arbiter.advanceTime(1);
+    CHECK_FALSE(arbiter.isCoolingDown(1));
+}
+
+TEST_CASE("a cooldown for one piece id does not affect another") {
+    RealTimeArbiter arbiter;
+    arbiter.startCooldown(1, Position{0, 0}, 1000);
+    CHECK_FALSE(arbiter.isCoolingDown(2));
+}
+
 TEST_CASE("starting a move makes hasActiveMotion true") {
     RealTimeArbiter arbiter;
     arbiter.startMotion(makePiece(Position{0, 0}), Position{0, 0}, Position{0, 2});

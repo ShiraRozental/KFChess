@@ -22,6 +22,7 @@ namespace MoveResultReason {
     constexpr const char* Ok = "ok";
     constexpr const char* GameOver = "game_over";
     constexpr const char* MotionInProgress = "motion_in_progress";
+    constexpr const char* CoolingDown = "cooling_down";
 }
 
 // The application-service coordinator: the public command boundary used by
@@ -44,7 +45,7 @@ public:
     std::optional<PieceColor> winner() const;
 
 private:
-    void landPiece(Piece piece, Position cell);
+    void landPiece(Piece piece, Position cell, bool wasJump);
     void promoteIfNeeded(int row, int col, PieceType type, PieceColor color);
     static GameState winningStateFor(PieceColor color);
     static PieceColor opponentOf(PieceColor color);

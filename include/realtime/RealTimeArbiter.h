@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 #include "realtime/Motion.h"
+#include "realtime/Cooldown.h"
 #include "model/Piece.h"
 #include "model/Position.h"
 
@@ -26,15 +27,11 @@ struct InFlightPiece {
     Position cell;
 };
 
-// Owns all timing/motion bookkeeping for pieces currently in flight (moving
-// or jumping). Never touches Board — while a piece is in flight its Motion
-// owns it outright (the piece is off the board entirely), and it is handed
-// back through the ArrivalEvent that resolves the motion.
+// Owns every clock-driven concern of the real-time layer: in-flight
+// Motions, post-landing Cooldowns, and arrival/capture resolution.
 //
-// hasActiveMotion() only ever reports true for a real move (see
-// Motion::isJump) — a jump never blocks, and is never blocked by, another
-// piece's move (Jump is a defensive action and must stay usable while
-// another piece is mid-move).
+// hasActiveMotion() ignores jumps (Motion::isJump) — a jump never blocks,
+// or is blocked by, another piece's move.
 class RealTimeArbiter {
 public:
     bool hasActiveMotion() const;
@@ -43,9 +40,13 @@ public:
     ArrivalEvents advanceTime(int ms);
     std::vector<InFlightPiece> inFlightPieces() const;
 
+    void startCooldown(PieceId pieceId, Position cell, long long durationMs);
+    bool isCoolingDown(PieceId pieceId) const;
+
 private:
     void resolveConflicts(std::vector<bool>& capturedMidFlight);
 
     long long clockMs_ = 0;
     std::vector<Motion> motions_;
+    std::vector<Cooldown> cooldowns_;
 };
