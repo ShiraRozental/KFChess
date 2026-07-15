@@ -1,7 +1,7 @@
 #pragma once
 #include <optional>
 #include "engine/GameEngine.h"
-#include "io/BoardMapper.h"
+#include "input/BoardMapper.h"
 #include "model/Position.h"
 
 // Result of a single click: whether it reached the point of requesting a

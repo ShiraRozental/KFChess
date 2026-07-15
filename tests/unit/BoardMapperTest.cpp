@@ -1,5 +1,5 @@
 #include "doctest/doctest.h"
-#include "io/BoardMapper.h"
+#include "input/BoardMapper.h"
 
 TEST_CASE("x=0..99 maps to column 0") {
     BoardMapper mapper(8, 8, 100);

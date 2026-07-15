@@ -1,7 +1,7 @@
 #include <iostream>
 #include "io/BoardParser.h"
 #include "engine/GameEngine.h"
-#include "app/TextTestRunner.h"
+#include "texttests/TextTestRunner.h"
 //githube:
 //https://github.com/ShiraRozental/KFChess
 int main() {

@@ -1,5 +1,5 @@
 #include "doctest/doctest.h"
-#include "app/Controller.h"
+#include "input/Controller.h"
 #include "engine/GameEngine.h"
 
 namespace {

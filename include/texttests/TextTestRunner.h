@@ -2,7 +2,7 @@
 #include <optional>
 #include <ostream>
 #include <string>
-#include "app/Controller.h"
+#include "input/Controller.h"
 #include "engine/GameEngine.h"
 
 // Interprets the text DSL ("click x y" / "jump x y" / "wait ms" /

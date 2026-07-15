@@ -1,5 +1,5 @@
-#include "app/TextTestRunner.h"
-#include "io/BoardMapper.h"
+#include "texttests/TextTestRunner.h"
+#include "input/BoardMapper.h"
 #include "io/BoardTextFormat.h"
 #include <sstream>
 

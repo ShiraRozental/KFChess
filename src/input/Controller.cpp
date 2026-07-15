@@ -1,4 +1,4 @@
-#include "app/Controller.h"
+#include "input/Controller.h"
 
 Controller::Controller(GameEngine& engine, BoardMapper mapper)
     : engine_(engine), mapper_(mapper) {

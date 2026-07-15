@@ -1,4 +1,4 @@
-#include "io/BoardMapper.h"
+#include "input/BoardMapper.h"
 
 namespace {
     // Floor division, so pixels left of/above the board (negative) map to

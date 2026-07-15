@@ -1,6 +1,6 @@
 #include "doctest/doctest.h"
 #include "engine/GameEngine.h"
-#include "app/TextTestRunner.h"
+#include "texttests/TextTestRunner.h"
 #include "rules/RuleEngine.h"
 #include <sstream>
 

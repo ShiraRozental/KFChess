@@ -8,7 +8,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 file(GLOB_RECURSE SOURCES "src/*.cpp")
 
 # נקודת הכניסה של האפליקציה יושבת מחוץ ל-src/ (מקביל ל-app.py)
-add_executable(KFChess app/Main.cpp ${SOURCES})
+add_executable(KFChess Main.cpp ${SOURCES})
 
 target_include_directories(KFChess PRIVATE include)
 
@@ -23,7 +23,7 @@ if(BUILD_TESTS)
     target_include_directories(doctest INTERFACE tests)
     add_library(doctest::doctest ALIAS doctest)
 
-    # אותם קבצי לוגיקה כמו KFChess (app/Main.cpp לא נכלל: יש לו main משלו,
+    # אותם קבצי לוגיקה כמו KFChess (Main.cpp לא נכלל: יש לו main משלו,
     # ובלאו הכי הוא לא חלק מ-SOURCES כי הוא יושב מחוץ ל-src/)
     file(GLOB_RECURSE TEST_SOURCES "tests/*.cpp")
 
