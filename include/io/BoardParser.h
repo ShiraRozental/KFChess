@@ -2,10 +2,14 @@
 #include <istream>
 #include <string>
 #include <vector>
+#include "model/Board.h"
 
-// Splits stdin into the "Board:" text block and the raw command lines.
-// No game logic here — pure input/output boundary.
+struct ParsedInput {
+    Board board;
+    std::vector<std::string> commands;
+};
+
 class BoardParser {
 public:
-    static void parse(std::istream& in, std::string& boardText, std::vector<std::string>& commandLines);
+    static bool parse(std::istream& in, ParsedInput& out, std::string& errorMessage);
 };

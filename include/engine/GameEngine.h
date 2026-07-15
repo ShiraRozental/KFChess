@@ -26,13 +26,13 @@ namespace MoveResultReason {
 }
 
 // The application-service coordinator: the public command boundary used by
-// Controller and TextTestRunner. Speaks only in board cells (Position) —
+// Controller and ScriptRunner. Speaks only in board cells (Position) —
 // no pixels, no text parsing, no rendering, no piece-specific movement
 // logic (that's RuleEngine/PieceRules) — and delegates all motion timing
 // to RealTimeArbiter.
 class GameEngine {
 public:
-    bool loadBoard(const std::string& boardText, std::string& errorMessage);
+    explicit GameEngine(Board board = Board());
 
     MoveResult requestMove(const Position& source, const Position& destination);
     void requestJump(const Position& cell);

@@ -1,16 +1,11 @@
 #include "engine/GameEngine.h"
-#include "io/BoardTextFormat.h"
 #include "model/Piece.h"
 #include "rules/RuleEngine.h"
 #include "rules/MovementRuleFactory.h"
 #include "realtime/CooldownConfig.h"
-#include <sstream>
 #include <utility>
 
-// Loads a board description into the game object.
-bool GameEngine::loadBoard(const std::string& boardText, std::string& errorMessage) {
-    std::istringstream in(boardText);
-    return BoardTextFormat::parse(in, board_, errorMessage);
+GameEngine::GameEngine(Board board) : board_(std::move(board)) {
 }
 
 MoveResult GameEngine::requestMove(const Position& source, const Position& destination) {

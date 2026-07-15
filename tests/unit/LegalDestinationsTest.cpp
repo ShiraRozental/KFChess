@@ -1,13 +1,16 @@
 #include "doctest/doctest.h"
-#include "io/BoardTextFormat.h"
+#include "io/BoardParser.h"
 #include "rules/LegalDestinations.h"
 #include <sstream>
 
 namespace {
     bool parse(const std::string& text, Board& board) {
         std::istringstream in(text);
+        ParsedInput parsed;
         std::string error;
-        return BoardTextFormat::parse(in, board, error);
+        bool ok = BoardParser::parse(in, parsed, error);
+        board = std::move(parsed.board);
+        return ok;
     }
 
     std::set<Position> destinationsAt(const Board& board, int row, int col) {

@@ -1,15 +1,23 @@
 #include "doctest/doctest.h"
 #include "input/Controller.h"
 #include "engine/GameEngine.h"
+#include "io/BoardParser.h"
+#include <sstream>
 
 namespace {
     constexpr int kCellSizePixels = 100;
+
+    GameEngine makeGame(const std::string& boardText) {
+        std::istringstream in(boardText);
+        ParsedInput parsed;
+        std::string error;
+        BoardParser::parse(in, parsed, error);
+        return GameEngine(std::move(parsed.board));
+    }
 }
 
 TEST_CASE("a first click on an occupied cell selects it") {
-    GameEngine game;
-    std::string error;
-    game.loadBoard("Board:\nwK . .\n. . .\n. . .\n", error);
+    GameEngine game = makeGame("Board:\nwK . .\n. . .\n. . .\n");
     Controller controller(game, BoardMapper(3, 3, kCellSizePixels));
 
     controller.click(50, 50); // (0,0)
@@ -19,9 +27,7 @@ TEST_CASE("a first click on an occupied cell selects it") {
 }
 
 TEST_CASE("a first click on an empty cell leaves the selection empty") {
-    GameEngine game;
-    std::string error;
-    game.loadBoard("Board:\nwK . .\n. . .\n. . .\n", error);
+    GameEngine game = makeGame("Board:\nwK . .\n. . .\n. . .\n");
     Controller controller(game, BoardMapper(3, 3, kCellSizePixels));
 
     controller.click(250, 250); // (2,2), empty
@@ -30,9 +36,7 @@ TEST_CASE("a first click on an empty cell leaves the selection empty") {
 }
 
 TEST_CASE("a click outside the board with no selection does nothing") {
-    GameEngine game;
-    std::string error;
-    game.loadBoard("Board:\nwK . .\n. . .\n. . .\n", error);
+    GameEngine game = makeGame("Board:\nwK . .\n. . .\n. . .\n");
     Controller controller(game, BoardMapper(3, 3, kCellSizePixels));
 
     controller.click(-10, 50);
@@ -41,9 +45,7 @@ TEST_CASE("a click outside the board with no selection does nothing") {
 }
 
 TEST_CASE("a click outside the board with a selection clears it without requesting a move") {
-    GameEngine game;
-    std::string error;
-    game.loadBoard("Board:\nwK . .\n. . .\n. . .\n", error);
+    GameEngine game = makeGame("Board:\nwK . .\n. . .\n. . .\n");
     Controller controller(game, BoardMapper(3, 3, kCellSizePixels));
 
     controller.click(50, 50);   // select wK
@@ -56,9 +58,7 @@ TEST_CASE("a click outside the board with a selection clears it without requesti
 }
 
 TEST_CASE("a second click inside the board on a legal destination requests the move and applies it") {
-    GameEngine game;
-    std::string error;
-    game.loadBoard("Board:\nwK . .\n. . .\n. . .\n", error);
+    GameEngine game = makeGame("Board:\nwK . .\n. . .\n. . .\n");
     Controller controller(game, BoardMapper(3, 3, kCellSizePixels));
 
     controller.click(50, 50);                              // select wK at (0,0)
@@ -74,9 +74,7 @@ TEST_CASE("a second click inside the board on a legal destination requests the m
 }
 
 TEST_CASE("a second click inside the board on an illegal destination still clears the selection") {
-    GameEngine game;
-    std::string error;
-    game.loadBoard("Board:\nwR bP .\n", error);
+    GameEngine game = makeGame("Board:\nwR bP .\n");
     Controller controller(game, BoardMapper(1, 3, kCellSizePixels));
 
     controller.click(50, 50);                             // select wR at (0,0)
@@ -91,9 +89,7 @@ TEST_CASE("a second click inside the board on an illegal destination still clear
 }
 
 TEST_CASE("a second click on a same-color piece is rejected, not reselected") {
-    GameEngine game;
-    std::string error;
-    game.loadBoard("Board:\nwR . wK\n. . .\n", error);
+    GameEngine game = makeGame("Board:\nwR . wK\n. . .\n");
     Controller controller(game, BoardMapper(2, 3, kCellSizePixels));
 
     controller.click(50, 50);                             // select wR at (0,0)
@@ -105,9 +101,7 @@ TEST_CASE("a second click on a same-color piece is rejected, not reselected") {
 }
 
 TEST_CASE("jump translates a pixel into a cell and requests a jump, independent of selection") {
-    GameEngine game;
-    std::string error;
-    game.loadBoard("Board:\n. . .\nwK . .\n. . .\n", error);
+    GameEngine game = makeGame("Board:\n. . .\nwK . .\n. . .\n");
     Controller controller(game, BoardMapper(3, 3, kCellSizePixels));
 
     controller.jump(50, 150); // wK at (1,0)
@@ -117,9 +111,7 @@ TEST_CASE("jump translates a pixel into a cell and requests a jump, independent 
 }
 
 TEST_CASE("jump at an out-of-bounds pixel is ignored") {
-    GameEngine game;
-    std::string error;
-    game.loadBoard("Board:\nwK . .\n", error);
+    GameEngine game = makeGame("Board:\nwK . .\n");
     Controller controller(game, BoardMapper(1, 3, kCellSizePixels));
 
     controller.jump(-10, 50);
