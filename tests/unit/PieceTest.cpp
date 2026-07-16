@@ -37,3 +37,13 @@ TEST_CASE("setState can transition through idle, moving, and captured") {
     piece.setState(Piece::State::Captured);
     CHECK(piece.state() == Piece::State::Captured);
 }
+
+TEST_CASE("setState round-trips the jump and rest states") {
+    Piece piece(1, PieceColor::White, PieceType::Bishop, Position{3, 3});
+    piece.setState(Piece::State::Jumping);
+    CHECK(piece.state() == Piece::State::Jumping);
+    piece.setState(Piece::State::ShortRest);
+    CHECK(piece.state() == Piece::State::ShortRest);
+    piece.setState(Piece::State::LongRest);
+    CHECK(piece.state() == Piece::State::LongRest);
+}

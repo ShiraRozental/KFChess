@@ -46,6 +46,7 @@ public:
 
 private:
     void landPiece(Piece piece, Position cell, bool wasJump);
+    void clearRestAt(Position cell, PieceId pieceId);
     void promoteIfNeeded(int row, int col, PieceType type, PieceColor color);
     static GameState winningStateFor(PieceColor color);
     static PieceColor opponentOf(PieceColor color);

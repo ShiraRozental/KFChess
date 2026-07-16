@@ -50,7 +50,8 @@ bool GameEngine::hasPieceAt(const Position& pos) const {
 void GameEngine::wait(int ms) {
     if (isGameOver()) return;
 
-    for (const ArrivalEvent& event : arbiter_.advanceTime(ms)) {
+    TimeStep step = arbiter_.advanceTime(ms);
+    for (const ArrivalEvent& event : step.arrivals) {
         if (event.intercepted) {
             if (event.kingCaptured) {
                 gameState_ = winningStateFor(opponentOf(event.piece.color()));
@@ -82,6 +83,10 @@ void GameEngine::wait(int ms) {
 
         promoteIfNeeded(event.to.row, event.to.col, event.piece.kind(), event.piece.color());
     }
+
+    for (const ExpiredCooldown& expired : step.expiredCooldowns) {
+        clearRestAt(expired.cell, expired.pieceId);
+    }
 }
 
 // The snapshot's board is a display composition: the settled board plus
@@ -101,9 +106,17 @@ void GameEngine::landPiece(Piece piece, Position cell, bool wasJump) {
     piece.moveTo(cell);
     PieceId id = piece.id();
     PieceType kind = piece.kind();
+    piece.setState(wasJump ? Piece::State::ShortRest : Piece::State::LongRest);
     board_.addPiece(cell.row, cell.col, std::move(piece));
     long long cooldownMs = wasJump ? jumpCooldownDurationMs() : cooldownDurationMsFor(kind);
     arbiter_.startCooldown(id, cell, cooldownMs);
+}
+
+void GameEngine::clearRestAt(Position cell, PieceId pieceId) {
+    Piece* piece = board_.pieceAt(cell.row, cell.col);
+    if (!piece || piece->id() != pieceId) return;
+    if (piece->state() != Piece::State::ShortRest && piece->state() != Piece::State::LongRest) return;
+    piece->setState(Piece::State::Idle);
 }
 
 // Promotes the piece now sitting at (row, col) to a queen if its movement

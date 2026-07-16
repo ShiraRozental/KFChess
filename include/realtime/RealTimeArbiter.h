@@ -27,6 +27,18 @@ struct InFlightPiece {
     Position cell;
 };
 
+// A rest cooldown that finished this tick. pieceId lets the caller confirm the
+// same piece still occupies cell before clearing its rest.
+struct ExpiredCooldown {
+    PieceId pieceId;
+    Position cell;
+};
+
+struct TimeStep {
+    ArrivalEvents arrivals;
+    std::vector<ExpiredCooldown> expiredCooldowns;
+};
+
 // Owns every clock-driven concern of the real-time layer: in-flight
 // Motions, post-landing Cooldowns, and arrival/capture resolution.
 //
@@ -37,7 +49,7 @@ public:
     bool hasActiveMotion() const;
     bool hasMotionFrom(Position cell) const;
     void startMotion(Piece piece, Position source, Position destination);
-    ArrivalEvents advanceTime(int ms);
+    TimeStep advanceTime(int ms);
     std::vector<InFlightPiece> inFlightPieces() const;
 
     void startCooldown(PieceId pieceId, Position cell, long long durationMs);

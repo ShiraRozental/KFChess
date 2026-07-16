@@ -793,3 +793,52 @@ TEST_CASE("snapshot reflects the current board and game-over state") {
     REQUIRE(after.winner().has_value());
     CHECK(*after.winner() == PieceColor::White);
 }
+
+TEST_CASE("a piece is LongRest after a move lands and returns to Idle once its cooldown ends") {
+    GameEngine game = makeGame("Board:\nwR . .\n. . .\n. . .\n");
+    game.requestMove(Position{0, 0}, Position{0, 1});
+    game.wait(1000); // the one-cell move lands
+
+    GameSnapshot afterLanding = game.snapshot();
+    const Piece* moved = afterLanding.board().pieceAt(0, 1);
+    REQUIRE(moved != nullptr);
+    CHECK(moved->state() == Piece::State::LongRest);
+
+    game.wait(1000); // the move cooldown fully elapses
+    GameSnapshot afterCooldown = game.snapshot();
+    const Piece* rested = afterCooldown.board().pieceAt(0, 1);
+    REQUIRE(rested != nullptr);
+    CHECK(rested->state() == Piece::State::Idle);
+}
+
+TEST_CASE("a piece is ShortRest after a jump lands and returns to Idle after the shorter jump cooldown") {
+    GameEngine game = makeGame("Board:\nwR . .\n. . .\n. . .\n");
+    game.requestJump(Position{0, 0});
+    game.wait(1000); // the jump lands in place
+
+    GameSnapshot afterLanding = game.snapshot();
+    const Piece* jumped = afterLanding.board().pieceAt(0, 0);
+    REQUIRE(jumped != nullptr);
+    CHECK(jumped->state() == Piece::State::ShortRest);
+
+    game.wait(500); // the jump cooldown (shorter than a move's) elapses
+    GameSnapshot afterCooldown = game.snapshot();
+    const Piece* rested = afterCooldown.board().pieceAt(0, 0);
+    REQUIRE(rested != nullptr);
+    CHECK(rested->state() == Piece::State::Idle);
+}
+
+TEST_CASE("a stale cooldown expiring does not wake a different piece captured onto its cell") {
+    GameEngine game = makeGame("Board:\nwR . bR\n. . .\n. . .\n");
+    game.requestMove(Position{0, 0}, Position{0, 1}); // white settles on the middle cell
+    game.wait(1000);                                   // white LongRest, cooldown ends at t=2000
+
+    game.requestMove(Position{0, 2}, Position{0, 1}); // black moves onto white's cell
+    game.wait(1000);                                   // at t=2000 black captures white as white's stale cooldown fires
+
+    GameSnapshot snap = game.snapshot();
+    const Piece* occupant = snap.board().pieceAt(0, 1);
+    REQUIRE(occupant != nullptr);
+    CHECK(occupant->color() == PieceColor::Black);        // black captured white
+    CHECK(occupant->state() == Piece::State::LongRest);   // its own rest, not reset by white's stale expiry
+}

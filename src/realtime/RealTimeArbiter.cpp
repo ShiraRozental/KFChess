@@ -84,8 +84,9 @@ bool RealTimeArbiter::hasMotionFrom(Position cell) const {
 }
 
 void RealTimeArbiter::startMotion(Piece piece, Position source, Position destination) {
-    piece.setState(Piece::State::Moving);
-    motions_.push_back(source == destination
+    bool isJump = source == destination;
+    piece.setState(isJump ? Piece::State::Jumping : Piece::State::Moving);
+    motions_.push_back(isJump
         ? Motion::jump(std::move(piece), source, clockMs_)
         : Motion::move(std::move(piece), source, destination, clockMs_));
 }
@@ -132,11 +133,15 @@ void RealTimeArbiter::resolveConflicts(std::vector<bool>& capturedMidFlight) {
 
 // Advances the clock, resolves motion-vs-motion conflicts, then hands back
 // every motion whose (possibly now-collapsed) arrival time has passed.
-ArrivalEvents RealTimeArbiter::advanceTime(int ms) {
+TimeStep RealTimeArbiter::advanceTime(int ms) {
     clockMs_ += ms;
 
+    std::vector<ExpiredCooldown> expiredCooldowns;
     for (Cooldown& cooldown : cooldowns_) {
         cooldown.advance(ms);
+        if (cooldown.hasElapsed()) {
+            expiredCooldowns.push_back(ExpiredCooldown{cooldown.pieceId(), cooldown.cell()});
+        }
     }
     cooldowns_.erase(
         std::remove_if(cooldowns_.begin(), cooldowns_.end(),
@@ -167,7 +172,7 @@ ArrivalEvents RealTimeArbiter::advanceTime(int ms) {
         std::remove_if(motions_.begin(), motions_.end(),
             [&](const Motion& motion) { return motion.isDueBy(clockMs_); }),
         motions_.end());
-    return events;
+    return TimeStep{std::move(events), std::move(expiredCooldowns)};
 }
 
 // Copies of every in-flight piece with its current display cell (its

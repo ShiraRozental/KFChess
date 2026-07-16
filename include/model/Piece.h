@@ -12,7 +12,7 @@ using PieceId = int;
 // id and color are fixed at construction and never change afterward.
 class Piece {
 public:
-    enum class State { Idle, Moving, Captured };
+    enum class State { Idle, Moving, Jumping, ShortRest, LongRest, Captured };
 
     Piece(PieceId id, PieceColor color, PieceType kind, Position cell);
 
