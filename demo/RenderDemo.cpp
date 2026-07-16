@@ -2,9 +2,10 @@
 #include <iostream>
 #include <sstream>
 #include <string>
-#include <thread>
 #include "engine/GameEngine.h"
 #include "input/BoardMapper.h"
+#include "input/Controller.h"
+#include "input/MouseInputRouter.h"
 #include "io/BoardParser.h"
 #include "view/ImageView.h"
 
@@ -16,10 +17,7 @@
 namespace {
     constexpr int kCellSizePixels = 100;
     constexpr int kFrameMs = 33;
-    constexpr int kTotalFrames = 300;
-    constexpr int kPawnMoveFrame = 30;
-    constexpr int kKnightMoveFrame = 60;
-    constexpr int kQueenJumpFrame = 90;
+    constexpr int kEscapeKeyCode = 27;
     constexpr const char* kAssetsDirName = "assets";
 
     const std::string kStandardBoard =
@@ -58,6 +56,11 @@ namespace {
         throw std::runtime_error("Cannot find the assets/ directory above " + exePath.string());
     }
 
+    const char* winnerName(std::optional<PieceColor> winner) {
+        if (!winner.has_value()) return "Nobody";
+        return *winner == PieceColor::White ? "White" : "Black";
+    }
+
     int runDemo(const std::filesystem::path& exePath) {
         std::istringstream boardText(kStandardBoard);
         ParsedInput parsed;
@@ -67,25 +70,38 @@ namespace {
         }
 
         std::filesystem::path assets = findAssetsRoot(exePath);
-        int rows = parsed.board.rowCount();
-        int cols = parsed.board.colCount();
+        BoardMapper mapper(parsed.board.rowCount(), parsed.board.colCount(), kCellSizePixels);
         GameEngine game(std::move(parsed.board));
-        ImageView view(BoardMapper(rows, cols, kCellSizePixels),
+        ImageView view(mapper,
                        assets / "images" / "pieces",
                        assets / "images" / "board_classic.png");
+        Controller controller(game, mapper);
+        MouseInputRouter router(controller);
 
-        for (int frame = 0; frame < kTotalFrames; ++frame) {
-            if (frame == kPawnMoveFrame) game.requestMove(Position{6, 4}, Position{4, 4});
-            if (frame == kKnightMoveFrame) game.requestMove(Position{0, 1}, Position{2, 2});
-            if (frame == kQueenJumpFrame) game.requestJump(Position{7, 3});
+        Img::set_mouse_handler([&](MouseButton button, int pixelX, int pixelY) {
+            router.handle(button, pixelX, pixelY);
+            std::optional<Position> selected = controller.selectedCell();
+            view.setSelectedCell(selected);
+            view.setLegalDestinations(selected ? game.legalDestinationsFrom(*selected)
+                                               : std::set<Position>{});
+        });
 
+        std::cout << "Left click: select piece, then destination. "
+                     "Right click: jump. ESC: quit." << std::endl;
+
+        while (true) {
             game.wait(kFrameMs);
-            view.render(game.snapshot());
-            std::this_thread::sleep_for(std::chrono::milliseconds(kFrameMs));
-        }
+            GameSnapshot snapshot = game.snapshot();
+            view.render(snapshot);
 
-        std::cout << "Demo finished - press any key in the image window to close" << std::endl;
-        Img::wait_for_key();
+            if (snapshot.isGameOver()) {
+                std::cout << winnerName(snapshot.winner()) << " wins!" << std::endl;
+                std::cout << "Press any key in the image window to close" << std::endl;
+                Img::wait_for_key();
+                break;
+            }
+            if (Img::wait_key(kFrameMs) == kEscapeKeyCode) break;
+        }
         return 0;
     }
 }

@@ -191,7 +191,8 @@ std::vector<InFlightPiece> RealTimeArbiter::inFlightPieces() const {
     std::vector<InFlightPiece> fliers;
     fliers.reserve(motions_.size());
     for (const Motion& motion : motions_) {
-        fliers.push_back(InFlightPiece{motion.piece(), motion.currentCellAt(clockMs_)});
+        fliers.push_back(InFlightPiece{motion.piece(), motion.currentCellAt(clockMs_),
+                                       motion.fractionalPositionAt(clockMs_)});
     }
     return fliers;
 }

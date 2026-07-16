@@ -6,6 +6,15 @@
 
 namespace {
     const std::string kWindowName = "Image";
+    MouseHandler g_mouseHandler;
+
+    // cv::setMouseCallback trampoline: filters raw OpenCV events down to
+    // the two button presses the game understands.
+    void dispatchMouseEvent(int event, int x, int y, int, void*) {
+        if (!g_mouseHandler) return;
+        if (event == cv::EVENT_LBUTTONDOWN) g_mouseHandler(MouseButton::Left, x, y);
+        if (event == cv::EVENT_RBUTTONDOWN) g_mouseHandler(MouseButton::Right, x, y);
+    }
 
     // cv::imread cannot open non-ASCII paths on Windows, so the file is
     // read through std::ifstream (which handles Unicode paths natively)
@@ -156,15 +165,25 @@ void Img::show() {
     cv::destroyAllWindows();
 }
 
-void Img::show(int wait_ms) {
+int Img::show(int wait_ms) {
     if (img.empty()) {
         throw std::runtime_error("Image not loaded.");
     }
 
     cv::imshow(kWindowName, img);
-    cv::waitKey(wait_ms);
+    return cv::waitKey(wait_ms);
 }
 
 void Img::wait_for_key() {
     cv::waitKey(0);
+}
+
+int Img::wait_key(int wait_ms) {
+    return cv::waitKey(wait_ms);
+}
+
+void Img::set_mouse_handler(MouseHandler handler) {
+    g_mouseHandler = std::move(handler);
+    cv::namedWindow(kWindowName);
+    cv::setMouseCallback(kWindowName, dispatchMouseEvent);
 }

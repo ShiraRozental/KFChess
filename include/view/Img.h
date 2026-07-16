@@ -3,6 +3,7 @@
 #include <opencv2/opencv.hpp>
 #include <string>
 #include <filesystem>
+#include "input/MouseEvent.h"
 
 class Img {
 public:
@@ -63,12 +64,30 @@ public:
      */
     void show();
 
-    void show(int wait_ms);
+    /**
+     * Display the image and pump window events for wait_ms.
+     *
+     * @return Code of the key pressed during the wait, or -1 if none
+     */
+    int show(int wait_ms);
 
     /**
      * Block until a key is pressed in any open image window
      */
     static void wait_for_key();
+
+    /**
+     * Pump window events (mouse, keyboard) for wait_ms.
+     *
+     * @return Code of the key pressed during the wait, or -1 if none
+     */
+    static int wait_key(int wait_ms);
+
+    /**
+     * Register the handler that receives mouse clicks on the image window.
+     * Creates the window if needed; a later call replaces the handler.
+     */
+    static void set_mouse_handler(MouseHandler handler);
     
     /**
      * Get the underlying OpenCV Mat

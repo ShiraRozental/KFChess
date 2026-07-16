@@ -1,4 +1,5 @@
 #include "input/BoardMapper.h"
+#include <cmath>
 
 namespace {
     // Floor division, so pixels left of/above the board (negative) map to
@@ -24,6 +25,11 @@ std::optional<Position> BoardMapper::cellAt(int pixelX, int pixelY) const {
 
 PixelPoint BoardMapper::topLeftPixelOf(const Position& cell) const {
     return PixelPoint{cell.col * cellSizePixels_, cell.row * cellSizePixels_};
+}
+
+PixelPoint BoardMapper::topLeftPixelOf(const BoardPoint& point) const {
+    return PixelPoint{static_cast<int>(std::lround(point.col * cellSizePixels_)),
+                      static_cast<int>(std::lround(point.row * cellSizePixels_))};
 }
 
 int BoardMapper::cellSizePixels() const {

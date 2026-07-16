@@ -1,6 +1,7 @@
 #pragma once
 #include <utility>
 #include <vector>
+#include "model/BoardPoint.h"
 #include "model/Piece.h"
 #include "model/Position.h"
 
@@ -16,6 +17,7 @@ public:
     bool isJump() const;
     bool isDueBy(long long clockMs) const;
     Position currentCellAt(long long clockMs) const;
+    BoardPoint fractionalPositionAt(long long clockMs) const;
 
     long long startTimeMs() const;
    

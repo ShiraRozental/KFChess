@@ -21,11 +21,12 @@ struct ArrivalEvent {
 
 using ArrivalEvents = std::vector<ArrivalEvent>;
 
-// A read-only view of one piece currently in flight and the cell it should
-// be displayed at (its source, until motions carry a full trajectory).
+// A read-only view of one piece currently in flight: the cell it occupies
+// along its trajectory and its exact fractional position between cells.
 struct InFlightPiece {
     Piece piece;
     Position cell;
+    BoardPoint displayPosition;
 };
 
 // A rest cooldown that finished this tick. pieceId lets the caller confirm the

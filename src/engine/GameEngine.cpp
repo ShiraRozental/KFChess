@@ -1,6 +1,7 @@
 #include "engine/GameEngine.h"
 #include "model/Piece.h"
 #include "rules/RuleEngine.h"
+#include "rules/LegalDestinations.h"
 #include "rules/MovementRuleFactory.h"
 #include "realtime/CooldownConfig.h"
 #include <utility>
@@ -39,6 +40,12 @@ void GameEngine::requestJump(const Position& cell) {
 
 bool GameEngine::hasPieceAt(const Position& pos) const {
     return board_.pieceAt(pos.row, pos.col) != nullptr;
+}
+
+std::set<Position> GameEngine::legalDestinationsFrom(const Position& cell) const {
+    const Piece* piece = board_.pieceAt(cell.row, cell.col);
+    if (!piece) return {};
+    return legalDestinationsFor(board_, *piece);
 }
 
 // Advances simulated time and applies every motion RealTimeArbiter reports
@@ -94,11 +101,13 @@ void GameEngine::wait(int ms) {
 // never "disappears" from a printed board or a renderer.
 GameSnapshot GameEngine::snapshot() const {
     Board display = board_;
+    std::map<PieceId, BoardPoint> inFlightPositions;
     for (const InFlightPiece& flier : arbiter_.inFlightPieces()) {
         display.addPiece(flier.cell.row, flier.cell.col, flier.piece);
+        inFlightPositions.emplace(flier.piece.id(), flier.displayPosition);
     }
     return GameSnapshot(std::move(display), isGameOver(), winner(),
-                        arbiter_.cooldownProgressByPiece());
+                        arbiter_.cooldownProgressByPiece(), std::move(inFlightPositions));
 }
 
 // Places a piece whose flight has resolved (normally, or voided by the game

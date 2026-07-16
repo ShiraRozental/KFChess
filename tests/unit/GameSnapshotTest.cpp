@@ -58,3 +58,17 @@ TEST_CASE("mutating the original board after the snapshot is taken does not affe
     CHECK(board.pieceAt(0, 0) == nullptr);
     CHECK(snapshot.board().pieceAt(0, 0) != nullptr);
 }
+
+TEST_CASE("inFlightPositionOf returns the fractional position of a piece in flight") {
+    Board board;
+    GameSnapshot snapshot(board, false, std::nullopt, {}, {{7, BoardPoint{2.0, 3.5}}});
+    REQUIRE(snapshot.inFlightPositionOf(7).has_value());
+    CHECK(snapshot.inFlightPositionOf(7)->row == doctest::Approx(2.0));
+    CHECK(snapshot.inFlightPositionOf(7)->col == doctest::Approx(3.5));
+}
+
+TEST_CASE("inFlightPositionOf is nullopt for a piece that is not in flight") {
+    Board board;
+    GameSnapshot snapshot(board, false, std::nullopt);
+    CHECK_FALSE(snapshot.inFlightPositionOf(7).has_value());
+}

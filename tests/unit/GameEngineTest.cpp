@@ -859,3 +859,33 @@ TEST_CASE("a stale cooldown expiring does not wake a different piece captured on
     CHECK(occupant->color() == PieceColor::Black);        // black captured white
     CHECK(occupant->state() == Piece::State::LongRest);   // its own rest, not reset by white's stale expiry
 }
+
+TEST_CASE("a snapshot exposes a fractional in-flight position mid-move and drops it after landing") {
+    GameEngine game = makeGame("Board:\nwR . .\n. . .\n. . .\n");
+    game.requestMove(Position{0, 0}, Position{0, 2});
+
+    game.wait(500);
+    GameSnapshot midMove = game.snapshot();
+    const Piece* flier = midMove.board().pieceAt(0, 0);
+    REQUIRE(flier != nullptr);
+    std::optional<BoardPoint> position = midMove.inFlightPositionOf(flier->id());
+    REQUIRE(position.has_value());
+    CHECK(position->row == doctest::Approx(0.0));
+    CHECK(position->col == doctest::Approx(0.5));
+
+    game.wait(2000);
+    GameSnapshot landed = game.snapshot();
+    CHECK_FALSE(landed.inFlightPositionOf(flier->id()).has_value());
+    CHECK(landed.board().pieceAt(0, 2) != nullptr);
+}
+
+TEST_CASE("legalDestinationsFrom returns the piece's legal destinations") {
+    GameEngine game = makeGame("Board:\nwK . .\n. . .\n. . .\n");
+    CHECK(game.legalDestinationsFrom(Position{0, 0}) ==
+          std::set<Position>{{0, 1}, {1, 0}, {1, 1}});
+}
+
+TEST_CASE("legalDestinationsFrom returns an empty set for an empty cell") {
+    GameEngine game = makeGame("Board:\nwK . .\n. . .\n. . .\n");
+    CHECK(game.legalDestinationsFrom(Position{2, 2}).empty());
+}

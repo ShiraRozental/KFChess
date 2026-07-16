@@ -2,6 +2,7 @@
 #include <map>
 #include <optional>
 #include "model/Board.h"
+#include "model/BoardPoint.h"
 #include "model/PieceColor.h"
 
 // A detached, read-only copy of the game's current state — never a live
@@ -12,16 +13,19 @@
 class GameSnapshot {
 public:
     GameSnapshot(Board board, bool gameOver, std::optional<PieceColor> winner,
-                 std::map<PieceId, double> cooldownProgress = {});
+                 std::map<PieceId, double> cooldownProgress = {},
+                 std::map<PieceId, BoardPoint> inFlightPositions = {});
 
     const Board& board() const;
     bool isGameOver() const;
     std::optional<PieceColor> winner() const;
     std::optional<double> cooldownProgressOf(PieceId pieceId) const;
+    std::optional<BoardPoint> inFlightPositionOf(PieceId pieceId) const;
 
 private:
     Board board_;
     bool gameOver_;
     std::optional<PieceColor> winner_;
     std::map<PieceId, double> cooldownProgress_;
+    std::map<PieceId, BoardPoint> inFlightPositions_;
 };

@@ -1,6 +1,7 @@
 #pragma once
-#include <string>
 #include <optional>
+#include <set>
+#include <string>
 #include "engine/GameSnapshot.h"
 #include "model/Board.h"
 #include "model/GameState.h"
@@ -38,6 +39,7 @@ public:
     void requestJump(const Position& cell);
 
     bool hasPieceAt(const Position& pos) const;
+    std::set<Position> legalDestinationsFrom(const Position& cell) const;
     void wait(int ms);
     GameSnapshot snapshot() const;
 

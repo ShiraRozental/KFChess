@@ -65,6 +65,20 @@ Position Motion::currentCellAt(long long clockMs) const {
     return cell;
 }
 
+BoardPoint Motion::fractionalPositionAt(long long clockMs) const {
+    if (clockMs <= waypoints_.front().second) return toBoardPoint(waypoints_.front().first);
+    if (clockMs >= waypoints_.back().second) return toBoardPoint(waypoints_.back().first);
+
+    size_t next = 1;
+    while (waypoints_[next].second <= clockMs) ++next;
+    const auto& [fromCell, fromMs] = waypoints_[next - 1];
+    const auto& [toCell, toMs] = waypoints_[next];
+
+    double fraction = static_cast<double>(clockMs - fromMs) / static_cast<double>(toMs - fromMs);
+    return BoardPoint{fromCell.row + (toCell.row - fromCell.row) * fraction,
+                      fromCell.col + (toCell.col - fromCell.col) * fraction};
+}
+
 long long Motion::startTimeMs() const { return waypoints_.front().second; }
 
 Motion::Waypoints Motion::arrivalPoints() const {
