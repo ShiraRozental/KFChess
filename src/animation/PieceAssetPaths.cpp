@@ -1,11 +1,14 @@
 #include "animation/PieceAssetPaths.h"
+#include "animation/AnimationStateNames.h"
 #include "io/PieceNotation.h"
 #include <array>
 #include <cctype>
 #include <stdexcept>
 
 namespace {
-    const std::array<std::string, 5> kRequiredStates = {"idle", "move", "jump", "short_rest", "long_rest"};
+    const std::array<std::string, 5> kRequiredStates = {
+        AnimationStateName::Idle, AnimationStateName::Move, AnimationStateName::Jump,
+        AnimationStateName::ShortRest, AnimationStateName::LongRest};
 }
 
 std::string pieceAssetCode(PieceColor color, PieceType kind) {
