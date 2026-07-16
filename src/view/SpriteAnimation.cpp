@@ -20,7 +20,7 @@ namespace {
         std::vector<Img> frames;
         frames.reserve(paths.size());
         for (const auto& path : paths) {
-            frames.emplace_back(Img().read(path.string(), frameSize));
+            frames.emplace_back(Img().read(path, frameSize, true));
         }
         return frames;
     }

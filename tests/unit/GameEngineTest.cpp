@@ -794,6 +794,23 @@ TEST_CASE("snapshot reflects the current board and game-over state") {
     CHECK(*after.winner() == PieceColor::White);
 }
 
+TEST_CASE("a snapshot reports cooldown progress for a resting piece and none once it ends") {
+    GameEngine game = makeGame("Board:\nwR . .\n. . .\n. . .\n");
+    game.requestMove(Position{0, 0}, Position{0, 1});
+    game.wait(1000); // the one-cell move lands, its 1000ms cooldown starts
+
+    game.wait(250);
+    GameSnapshot resting = game.snapshot();
+    const Piece* rook = resting.board().pieceAt(0, 1);
+    REQUIRE(rook != nullptr);
+    REQUIRE(resting.cooldownProgressOf(rook->id()).has_value());
+    CHECK(*resting.cooldownProgressOf(rook->id()) == doctest::Approx(0.25));
+
+    game.wait(750); // the cooldown fully elapses
+    GameSnapshot rested = game.snapshot();
+    CHECK_FALSE(rested.cooldownProgressOf(rook->id()).has_value());
+}
+
 TEST_CASE("a piece is LongRest after a move lands and returns to Idle once its cooldown ends") {
     GameEngine game = makeGame("Board:\nwR . .\n. . .\n. . .\n");
     game.requestMove(Position{0, 0}, Position{0, 1});

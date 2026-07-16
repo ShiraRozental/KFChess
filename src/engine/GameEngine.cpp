@@ -97,7 +97,8 @@ GameSnapshot GameEngine::snapshot() const {
     for (const InFlightPiece& flier : arbiter_.inFlightPieces()) {
         display.addPiece(flier.cell.row, flier.cell.col, flier.piece);
     }
-    return GameSnapshot(std::move(display), isGameOver(), winner());
+    return GameSnapshot(std::move(display), isGameOver(), winner(),
+                        arbiter_.cooldownProgressByPiece());
 }
 
 // Places a piece whose flight has resolved (normally, or voided by the game

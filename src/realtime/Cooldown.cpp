@@ -14,3 +14,8 @@ void Cooldown::advance(long long deltaMs) {
 bool Cooldown::hasElapsed() const {
     return elapsedMs_ >= durationMs_;
 }
+
+double Cooldown::fractionElapsed() const {
+    if (durationMs_ <= 0 || elapsedMs_ >= durationMs_) return 1.0;
+    return static_cast<double>(elapsedMs_) / static_cast<double>(durationMs_);
+}

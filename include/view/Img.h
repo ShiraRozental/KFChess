@@ -17,7 +17,7 @@ public:
      * @param interpolation OpenCV interpolation flag (e.g., cv::INTER_AREA for shrink, cv::INTER_LINEAR for enlarge)
      * @return Reference to this object for method chaining
      */
-    Img& read(const std::string& path,
+    Img& read(const std::filesystem::path& path,
               const std::pair<int, int>& size = {},
               bool keep_aspect = false,
               int interpolation = cv::INTER_AREA);
@@ -44,6 +44,17 @@ public:
     void put_text(const std::string& txt, int x, int y, double font_size,
                   const cv::Scalar& color = cv::Scalar(255, 255, 255, 255),
                   int thickness = 1);
+
+    /**
+     * Fill a solid rectangle on the image
+     *
+     * @param x X coordinate of the top-left corner
+     * @param y Y coordinate of the top-left corner
+     * @param width Rectangle width in pixels
+     * @param height Rectangle height in pixels
+     * @param color Fill color (BGR or BGRA)
+     */
+    void fill_rect(int x, int y, int width, int height, const cv::Scalar& color);
     
     Img clone() const;
 
@@ -53,6 +64,11 @@ public:
     void show();
 
     void show(int wait_ms);
+
+    /**
+     * Block until a key is pressed in any open image window
+     */
+    static void wait_for_key();
     
     /**
      * Get the underlying OpenCV Mat
@@ -63,6 +79,9 @@ public:
      * Check if image is loaded
      */
     bool is_loaded() const { return !img.empty(); }
+
+    int width() const { return img.cols; }
+    int height() const { return img.rows; }
 
 private:
     cv::Mat img;

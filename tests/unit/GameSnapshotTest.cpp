@@ -29,6 +29,25 @@ TEST_CASE("winner reflects the color passed to the constructor") {
     CHECK(*snapshot.winner() == PieceColor::Black);
 }
 
+TEST_CASE("cooldownProgressOf returns the progress of a cooling piece") {
+    Board board;
+    GameSnapshot snapshot(board, false, std::nullopt, {{7, 0.25}});
+    REQUIRE(snapshot.cooldownProgressOf(7).has_value());
+    CHECK(*snapshot.cooldownProgressOf(7) == doctest::Approx(0.25));
+}
+
+TEST_CASE("cooldownProgressOf is nullopt for a piece with no cooldown") {
+    Board board;
+    GameSnapshot snapshot(board, false, std::nullopt, {{7, 0.25}});
+    CHECK_FALSE(snapshot.cooldownProgressOf(8).has_value());
+}
+
+TEST_CASE("a snapshot built without cooldown progress reports none for any piece") {
+    Board board;
+    GameSnapshot snapshot(board, false, std::nullopt);
+    CHECK_FALSE(snapshot.cooldownProgressOf(1).has_value());
+}
+
 TEST_CASE("mutating the original board after the snapshot is taken does not affect the snapshot") {
     Board board(1, 1);
     board.addPiece(0, 0, Piece(1, PieceColor::White, PieceType::King, Position{0, 0}));

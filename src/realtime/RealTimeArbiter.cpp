@@ -95,6 +95,14 @@ void RealTimeArbiter::startCooldown(PieceId pieceId, Position cell, long long du
     cooldowns_.emplace_back(pieceId, cell, durationMs);
 }
 
+std::map<PieceId, double> RealTimeArbiter::cooldownProgressByPiece() const {
+    std::map<PieceId, double> progress;
+    for (const Cooldown& cooldown : cooldowns_) {
+        progress[cooldown.pieceId()] = cooldown.fractionElapsed();
+    }
+    return progress;
+}
+
 bool RealTimeArbiter::isCoolingDown(PieceId pieceId) const {
     for (const Cooldown& cooldown : cooldowns_) {
         if (cooldown.pieceId() == pieceId) return true;

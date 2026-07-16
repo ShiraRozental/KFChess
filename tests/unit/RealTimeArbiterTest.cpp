@@ -39,6 +39,29 @@ TEST_CASE("a cooldown for one piece id does not affect another") {
     CHECK_FALSE(arbiter.isCoolingDown(2));
 }
 
+TEST_CASE("cooldown progress is empty when no cooldowns are active") {
+    RealTimeArbiter arbiter;
+    CHECK(arbiter.cooldownProgressByPiece().empty());
+}
+
+TEST_CASE("cooldown progress reports each cooling piece's fraction elapsed") {
+    RealTimeArbiter arbiter;
+    arbiter.startCooldown(1, Position{0, 0}, 1000);
+    arbiter.startCooldown(2, Position{1, 1}, 2000);
+    arbiter.advanceTime(500);
+
+    auto progress = arbiter.cooldownProgressByPiece();
+    CHECK(progress.at(1) == doctest::Approx(0.5));
+    CHECK(progress.at(2) == doctest::Approx(0.25));
+}
+
+TEST_CASE("an expired cooldown disappears from the progress map") {
+    RealTimeArbiter arbiter;
+    arbiter.startCooldown(1, Position{0, 0}, 1000);
+    arbiter.advanceTime(1000);
+    CHECK(arbiter.cooldownProgressByPiece().count(1) == 0);
+}
+
 TEST_CASE("starting a move makes hasActiveMotion true") {
     RealTimeArbiter arbiter;
     arbiter.startMotion(makePiece(Position{0, 0}), Position{0, 0}, Position{0, 2});

@@ -11,6 +11,7 @@ public:
 
     void advance(long long deltaMs);
     bool hasElapsed() const;
+    double fractionElapsed() const;
 
 private:
     PieceId pieceId_;

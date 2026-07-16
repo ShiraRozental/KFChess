@@ -24,10 +24,12 @@ private:
 
     long long elapsedSinceLastRenderMs();
     PieceView& viewFor(const Piece& piece);
-    void drawPieces(const Board& board, Img& frame, long long dtMs);
+    void drawPieces(const GameSnapshot& snapshot, Img& frame, long long dtMs);
+    void drawCooldownBar(Img& frame, PixelPoint cellTopLeft, double progress);
     void removeViewsOfCapturedPieces(const Board& board);
 
     BoardMapper mapper_;
+    int pieceMarginPixels_;
     AnimationCache cache_;
     Img boardImg_;
     std::map<PieceId, TrackedPiece> pieceViews_;

@@ -1,22 +1,37 @@
 #include "../../include/view/Img.h"
+#include <fstream>
 #include <iostream>
 #include <stdexcept>
+#include <vector>
 
 namespace {
     const std::string kWindowName = "Image";
+
+    // cv::imread cannot open non-ASCII paths on Windows, so the file is
+    // read through std::ifstream (which handles Unicode paths natively)
+    // and decoded from memory.
+    cv::Mat decodeImageFile(const std::filesystem::path& path) {
+        std::ifstream file(path, std::ios::binary);
+        if (!file) return {};
+        std::vector<char> bytes((std::istreambuf_iterator<char>(file)),
+                                std::istreambuf_iterator<char>());
+        if (bytes.empty()) return {};
+        return cv::imdecode(cv::Mat(1, static_cast<int>(bytes.size()), CV_8UC1, bytes.data()),
+                            cv::IMREAD_UNCHANGED);
+    }
 }
 
 Img::Img() {
     // Constructor - img is automatically initialized as empty
 }
 
-Img& Img::read(const std::string& path,
+Img& Img::read(const std::filesystem::path& path,
                const std::pair<int, int>& size,
                bool keep_aspect,
                int interpolation) {
-    img = cv::imread(path, cv::IMREAD_UNCHANGED);
+    img = decodeImageFile(path);
     if (img.empty()) {
-        throw std::runtime_error("Cannot load image: " + path);
+        throw std::runtime_error("Cannot load image: " + path.string());
     }
 
     if (size.first != 0 && size.second != 0) {  // Check if size is not empty
@@ -44,16 +59,14 @@ void Img::draw_on(Img& other_img, int x, int y) const {
         throw std::runtime_error("Both images must be loaded before drawing.");
     }
 
-    // Handle different channel counts
+    // A 4-channel source keeps its alpha (the blend below composites it
+    // onto a 3- or 4-channel target); only an opaque 3-channel source
+    // needs channel equalization before the plain copy.
     cv::Mat source_img = img;
     cv::Mat target_img = other_img.img;
-    
-    if (source_img.channels() != target_img.channels()) {
-        if (source_img.channels() == 3 && target_img.channels() == 4) {
-            cv::cvtColor(source_img, source_img, cv::COLOR_BGR2BGRA);
-        } else if (source_img.channels() == 4 && target_img.channels() == 3) {
-            cv::cvtColor(source_img, source_img, cv::COLOR_BGRA2BGR);
-        }
+
+    if (source_img.channels() == 3 && target_img.channels() == 4) {
+        cv::cvtColor(source_img, source_img, cv::COLOR_BGR2BGRA);
     }
 
     int h = source_img.rows;
@@ -72,19 +85,35 @@ void Img::draw_on(Img& other_img, int x, int y) const {
         std::vector<cv::Mat> channels;
         cv::split(source_img, channels);
 
+        // Per-pixel alpha blend (result = src*a + dst*(1-a)), so the
+        // anti-aliased semi-transparent edge pixels a downscale produces
+        // merge smoothly with the board instead of being copied opaque.
         cv::Mat alpha;
-        channels[3].convertTo(alpha, CV_8U);
+        channels[3].convertTo(alpha, CV_32F, 1.0 / 255.0);
+        cv::Mat alpha_bgr;
+        cv::merge(std::vector<cv::Mat>{alpha, alpha, alpha}, alpha_bgr);
 
         cv::Mat src_bgr;
         cv::merge(std::vector<cv::Mat>{channels[0], channels[1], channels[2]}, src_bgr);
+        src_bgr.convertTo(src_bgr, CV_32FC3);
+
+        cv::Mat roi_bgr;
+        if (roi.channels() == 4) {
+            cv::cvtColor(roi, roi_bgr, cv::COLOR_BGRA2BGR);
+        } else {
+            roi_bgr = roi.clone();
+        }
+        roi_bgr.convertTo(roi_bgr, CV_32FC3);
+
+        cv::Mat inverse_alpha;
+        cv::subtract(cv::Scalar::all(1.0), alpha_bgr, inverse_alpha);
+        cv::Mat blended = src_bgr.mul(alpha_bgr) + roi_bgr.mul(inverse_alpha);
+        blended.convertTo(blended, CV_8UC3);
 
         if (roi.channels() == 4) {
-            cv::Mat roi_bgr;
-            cv::cvtColor(roi, roi_bgr, cv::COLOR_BGRA2BGR);
-            src_bgr.copyTo(roi_bgr, alpha);
-            cv::cvtColor(roi_bgr, roi, cv::COLOR_BGR2BGRA);
+            cv::cvtColor(blended, roi, cv::COLOR_BGR2BGRA);
         } else {
-            src_bgr.copyTo(roi, alpha);
+            blended.copyTo(roi);
         }
     } else {
         source_img.copyTo(roi);
@@ -100,6 +129,15 @@ void Img::put_text(const std::string& txt, int x, int y, double font_size,
     cv::putText(img, txt, cv::Point(x, y),
                 cv::FONT_HERSHEY_SIMPLEX, font_size,
                 color, thickness, cv::LINE_AA);
+}
+
+void Img::fill_rect(int x, int y, int width, int height, const cv::Scalar& color) {
+    if (img.empty()) {
+        throw std::runtime_error("Image not loaded.");
+    }
+    if (width <= 0 || height <= 0) return;
+
+    cv::rectangle(img, cv::Rect(x, y, width, height), color, cv::FILLED);
 }
 
 Img Img::clone() const {
@@ -125,4 +163,8 @@ void Img::show(int wait_ms) {
 
     cv::imshow(kWindowName, img);
     cv::waitKey(wait_ms);
+}
+
+void Img::wait_for_key() {
+    cv::waitKey(0);
 }

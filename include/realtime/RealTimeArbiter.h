@@ -1,4 +1,5 @@
 #pragma once
+#include <map>
 #include <vector>
 #include "realtime/Motion.h"
 #include "realtime/Cooldown.h"
@@ -54,6 +55,7 @@ public:
 
     void startCooldown(PieceId pieceId, Position cell, long long durationMs);
     bool isCoolingDown(PieceId pieceId) const;
+    std::map<PieceId, double> cooldownProgressByPiece() const;
 
 private:
     void resolveConflicts(std::vector<bool>& capturedMidFlight);
