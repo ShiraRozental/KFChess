@@ -7,4 +7,5 @@
 #include "view/SpriteAnimation.h"
 
 std::map<std::string, SpriteAnimation> loadPieceAnimations(
-    PieceColor color, PieceType kind, const std::filesystem::path& assetsRoot);
+    PieceColor color, PieceType kind, const std::filesystem::path& assetsRoot,
+    const std::pair<int, int>& frameSize = {});

@@ -29,7 +29,7 @@ public:
      * @param x X coordinate for top-left corner
      * @param y Y coordinate for top-left corner
      */
-    void draw_on(Img& other_img, int x, int y);
+    void draw_on(Img& other_img, int x, int y) const;
     
     /**
      * Put text on the image
@@ -45,10 +45,14 @@ public:
                   const cv::Scalar& color = cv::Scalar(255, 255, 255, 255),
                   int thickness = 1);
     
+    Img clone() const;
+
     /**
      * Display the image in a window
      */
     void show();
+
+    void show(int wait_ms);
     
     /**
      * Get the underlying OpenCV Mat

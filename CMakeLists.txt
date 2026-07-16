@@ -11,34 +11,35 @@ file(GLOB_RECURSE VIEW_SOURCES "src/view/*.cpp")
 set(CORE_SOURCES ${ALL_SOURCES})
 list(REMOVE_ITEM CORE_SOURCES ${VIEW_SOURCES})
 
-# נקודת הכניסה של האפליקציה יושבת מחוץ ל-src/ (מקביל ל-app.py)
-add_executable(KFChess Main.cpp ${CORE_SOURCES} ${VIEW_SOURCES})
-
-target_include_directories(KFChess PRIVATE include third_party)
-
 # --- OpenCV (מגיע ארוז בפרויקט תחת third_party/, בלי צורך בהתקנת מערכת) ---
 set(OPENCV_DIR "${CMAKE_CURRENT_SOURCE_DIR}/third_party/OpenCV_451")
 set(OPENCV_INCLUDE_DIR "${OPENCV_DIR}/include")
 set(OPENCV_LIB_DIR "${OPENCV_DIR}/bin")
 
-target_include_directories(KFChess PRIVATE ${OPENCV_INCLUDE_DIR})
-target_link_directories(KFChess PRIVATE ${OPENCV_LIB_DIR})
-target_link_libraries(KFChess PRIVATE
-    $<$<CONFIG:Debug>:${OPENCV_LIB_DIR}/opencv_world451d.lib>
-    $<$<CONFIG:Release>:${OPENCV_LIB_DIR}/opencv_world451.lib>
-    $<$<CONFIG:RelWithDebInfo>:${OPENCV_LIB_DIR}/opencv_world451.lib>
-    $<$<CONFIG:MinSizeRel>:${OPENCV_LIB_DIR}/opencv_world451.lib>
-)
+function(add_opencv_executable target entry_point)
+    add_executable(${target} ${entry_point} ${CORE_SOURCES} ${VIEW_SOURCES})
+    target_include_directories(${target} PRIVATE include third_party ${OPENCV_INCLUDE_DIR})
+    target_link_directories(${target} PRIVATE ${OPENCV_LIB_DIR})
+    target_link_libraries(${target} PRIVATE
+        $<$<CONFIG:Debug>:${OPENCV_LIB_DIR}/opencv_world451d.lib>
+        $<$<CONFIG:Release>:${OPENCV_LIB_DIR}/opencv_world451.lib>
+        $<$<CONFIG:RelWithDebInfo>:${OPENCV_LIB_DIR}/opencv_world451.lib>
+        $<$<CONFIG:MinSizeRel>:${OPENCV_LIB_DIR}/opencv_world451.lib>
+    )
+    if(WIN32)
+        add_custom_command(TARGET ${target} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            $<$<CONFIG:Debug>:${OPENCV_LIB_DIR}/opencv_world451d.dll>
+            $<$<CONFIG:Release>:${OPENCV_LIB_DIR}/opencv_world451.dll>
+            $<$<CONFIG:RelWithDebInfo>:${OPENCV_LIB_DIR}/opencv_world451.dll>
+            $<$<CONFIG:MinSizeRel>:${OPENCV_LIB_DIR}/opencv_world451.dll>
+            $<TARGET_FILE_DIR:${target}>)
+    endif()
+endfunction()
 
-if(WIN32)
-    add_custom_command(TARGET KFChess POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        $<$<CONFIG:Debug>:${OPENCV_LIB_DIR}/opencv_world451d.dll>
-        $<$<CONFIG:Release>:${OPENCV_LIB_DIR}/opencv_world451.dll>
-        $<$<CONFIG:RelWithDebInfo>:${OPENCV_LIB_DIR}/opencv_world451.dll>
-        $<$<CONFIG:MinSizeRel>:${OPENCV_LIB_DIR}/opencv_world451.dll>
-        $<TARGET_FILE_DIR:KFChess>)
-endif()
+# נקודת הכניסה של האפליקציה יושבת מחוץ ל-src/ (מקביל ל-app.py)
+add_opencv_executable(KFChess Main.cpp)
+add_opencv_executable(KFChessRenderDemo demo/RenderDemo.cpp)
 
 # --- Unit tests ---
 option(BUILD_TESTS "Build the doctest-based unit test suite" ON)

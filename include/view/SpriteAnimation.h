@@ -13,7 +13,8 @@
 // across every piece currently in this (piece code, state) combination.
 class SpriteAnimation {
 public:
-    explicit SpriteAnimation(const std::filesystem::path& stateFolder);
+    explicit SpriteAnimation(const std::filesystem::path& stateFolder,
+                             const std::pair<int, int>& frameSize = {});
 
     const Img& frameAt(long long elapsedMs) const;
     bool hasFinishedAt(long long elapsedMs) const;

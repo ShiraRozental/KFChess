@@ -1,5 +1,6 @@
 #pragma once
 #include <optional>
+#include "input/PixelPoint.h"
 #include "model/Position.h"
 
 // Translates pixel coordinates into board cells — the only place in the
@@ -11,6 +12,10 @@ public:
     explicit BoardMapper(int rows = 0, int cols = 0, int cellSizePixels = 1);
 
     std::optional<Position> cellAt(int pixelX, int pixelY) const;
+    PixelPoint topLeftPixelOf(const Position& cell) const;
+    int cellSizePixels() const;
+    int boardPixelWidth() const;
+    int boardPixelHeight() const;
 
 private:
     int rows_;

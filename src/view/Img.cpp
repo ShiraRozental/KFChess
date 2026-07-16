@@ -2,6 +2,10 @@
 #include <iostream>
 #include <stdexcept>
 
+namespace {
+    const std::string kWindowName = "Image";
+}
+
 Img::Img() {
     // Constructor - img is automatically initialized as empty
 }
@@ -35,7 +39,7 @@ Img& Img::read(const std::string& path,
     return *this;
 }
 
-void Img::draw_on(Img& other_img, int x, int y) {
+void Img::draw_on(Img& other_img, int x, int y) const {
     if (img.empty() || other_img.img.empty()) {
         throw std::runtime_error("Both images must be loaded before drawing.");
     }
@@ -98,12 +102,27 @@ void Img::put_text(const std::string& txt, int x, int y, double font_size,
                 color, thickness, cv::LINE_AA);
 }
 
+Img Img::clone() const {
+    Img copy;
+    copy.img = img.clone();
+    return copy;
+}
+
 void Img::show() {
     if (img.empty()) {
         throw std::runtime_error("Image not loaded.");
     }
-    
-    cv::imshow("Image", img);
+
+    cv::imshow(kWindowName, img);
     cv::waitKey(0);
     cv::destroyAllWindows();
-} 
+}
+
+void Img::show(int wait_ms) {
+    if (img.empty()) {
+        throw std::runtime_error("Image not loaded.");
+    }
+
+    cv::imshow(kWindowName, img);
+    cv::waitKey(wait_ms);
+}

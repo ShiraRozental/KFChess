@@ -1,20 +1,35 @@
 #pragma once
+#include <chrono>
+#include <filesystem>
+#include <map>
+#include <optional>
+#include "input/BoardMapper.h"
+#include "view/AnimationCache.h"
+#include "view/Img.h"
+#include "view/PieceView.h"
 #include "view/Renderer.h"
 
-// Placeholder graphical Renderer: owns just enough to know the board's
-// pixel geometry (board size, cell size), mirroring what BoardMapper knows
-// for input. render() does not draw anything yet — no graphics library has
-// been chosen for this project. Once one is, this class becomes the seam
-// where sprite loading and drawing are implemented, with no change needed
-// to Renderer, GameEngine, or GameSnapshot.
 class ImageView : public Renderer {
 public:
-    ImageView(int rows, int cols, int cellSizePixels);
+    ImageView(BoardMapper mapper, const std::filesystem::path& assetsRoot,
+              const std::filesystem::path& boardImagePath);
 
     void render(const GameSnapshot& snapshot) override;
 
 private:
-    int rows_;
-    int cols_;
-    int cellSizePixels_;
+    struct TrackedPiece {
+        PieceType kind;
+        PieceView view;
+    };
+
+    long long elapsedSinceLastRenderMs();
+    PieceView& viewFor(const Piece& piece);
+    void drawPieces(const Board& board, Img& frame, long long dtMs);
+    void removeViewsOfCapturedPieces(const Board& board);
+
+    BoardMapper mapper_;
+    AnimationCache cache_;
+    Img boardImg_;
+    std::map<PieceId, TrackedPiece> pieceViews_;
+    std::optional<std::chrono::steady_clock::time_point> lastRenderTime_;
 };

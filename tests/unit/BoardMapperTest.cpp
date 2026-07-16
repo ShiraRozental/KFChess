@@ -40,3 +40,34 @@ TEST_CASE("a pixel inside bounds maps to the correct row and column together") {
     CHECK(cell->row == 2);
     CHECK(cell->col == 1);
 }
+
+TEST_CASE("topLeftPixelOf maps a cell to its top-left pixel") {
+    BoardMapper mapper(8, 8, 100);
+    CHECK(mapper.topLeftPixelOf(Position{0, 0}) == PixelPoint{0, 0});
+    CHECK(mapper.topLeftPixelOf(Position{2, 3}) == PixelPoint{300, 200});
+}
+
+TEST_CASE("topLeftPixelOf is the inverse of cellAt for every cell") {
+    BoardMapper mapper(4, 6, 50);
+    for (int row = 0; row < 4; ++row) {
+        for (int col = 0; col < 6; ++col) {
+            PixelPoint pixel = mapper.topLeftPixelOf(Position{row, col});
+            std::optional<Position> back = mapper.cellAt(pixel.x, pixel.y);
+            REQUIRE(back.has_value());
+            CHECK(*back == Position{row, col});
+        }
+    }
+}
+
+TEST_CASE("board pixel dimensions are cells times cell size") {
+    BoardMapper mapper(4, 6, 50);
+    CHECK(mapper.boardPixelWidth() == 300);
+    CHECK(mapper.boardPixelHeight() == 200);
+    CHECK(mapper.cellSizePixels() == 50);
+}
+
+TEST_CASE("PixelPoint equality compares both coordinates") {
+    CHECK(PixelPoint{1, 2} == PixelPoint{1, 2});
+    CHECK(PixelPoint{1, 2} != PixelPoint{2, 1});
+    CHECK(PixelPoint{1, 2} != PixelPoint{1, 3});
+}

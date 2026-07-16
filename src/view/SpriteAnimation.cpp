@@ -3,7 +3,8 @@
 #include <stdexcept>
 
 namespace {
-    std::vector<Img> loadFrames(const std::filesystem::path& spritesFolder) {
+    std::vector<Img> loadFrames(const std::filesystem::path& spritesFolder,
+                                const std::pair<int, int>& frameSize) {
         std::vector<std::filesystem::path> paths;
         for (const auto& entry : std::filesystem::directory_iterator(spritesFolder)) {
             paths.push_back(entry.path());
@@ -19,14 +20,15 @@ namespace {
         std::vector<Img> frames;
         frames.reserve(paths.size());
         for (const auto& path : paths) {
-            frames.emplace_back(Img().read(path.string()));
+            frames.emplace_back(Img().read(path.string(), frameSize));
         }
         return frames;
     }
 }
 
-SpriteAnimation::SpriteAnimation(const std::filesystem::path& stateFolder)
-    : SpriteAnimation(loadFrames(stateFolder / "sprites"),
+SpriteAnimation::SpriteAnimation(const std::filesystem::path& stateFolder,
+                                 const std::pair<int, int>& frameSize)
+    : SpriteAnimation(loadFrames(stateFolder / "sprites", frameSize),
                        loadAnimationConfig(stateFolder / "config.json")) {
 }
 
