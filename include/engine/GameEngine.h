@@ -2,6 +2,8 @@
 #include <optional>
 #include <set>
 #include <string>
+#include <vector>
+#include "engine/GameEventListener.h"
 #include "engine/GameSnapshot.h"
 #include "model/Board.h"
 #include "model/GameState.h"
@@ -46,7 +48,11 @@ public:
     bool isGameOver() const;
     std::optional<PieceColor> winner() const;
 
+    void addListener(GameEventListener& listener);
+
 private:
+    void notifyMoveApplied(const ArrivalEvent& event, bool wasJump);
+    void notifyPieceCaptured(const Piece& captured, PieceColor capturedBy);
     void landPiece(Piece piece, Position cell, bool wasJump);
     void clearRestAt(Position cell, PieceId pieceId);
     void promoteIfNeeded(int row, int col, PieceType type, PieceColor color);
@@ -56,4 +62,5 @@ private:
     Board board_;
     RealTimeArbiter arbiter_;
     GameState gameState_ = GameState::InProgress;
+    std::vector<GameEventListener*> listeners_;
 };

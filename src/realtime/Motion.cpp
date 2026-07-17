@@ -41,19 +41,22 @@ namespace {
     }
 }
 
-Motion::Motion(Piece piece, Position source, Position destination, Waypoints waypoints)
-    : piece_(std::move(piece)), source_(source), destination_(destination), waypoints_(std::move(waypoints)) {
+Motion::Motion(Piece piece, Position source, Position destination, Waypoints waypoints, bool isJump)
+    : piece_(std::move(piece)), source_(source), destination_(destination),
+      isJump_(isJump), waypoints_(std::move(waypoints)) {
 }
 
 Motion Motion::move(Piece piece, Position source, Position destination, long long startTimeMs) {
-    return Motion(std::move(piece), source, destination, buildWaypoints(source, destination, startTimeMs));
+    return Motion(std::move(piece), source, destination,
+                  buildWaypoints(source, destination, startTimeMs), false);
 }
 
 Motion Motion::jump(Piece piece, Position cell, long long startTimeMs) {
-    return Motion(std::move(piece), cell, cell, {{cell, startTimeMs}, {cell, startTimeMs + kJumpDurationMs}});
+    return Motion(std::move(piece), cell, cell,
+                  {{cell, startTimeMs}, {cell, startTimeMs + kJumpDurationMs}}, true);
 }
 
-bool Motion::isJump() const { return source_ == destination_; }
+bool Motion::isJump() const { return isJump_; }
 bool Motion::isDueBy(long long clockMs) const { return waypoints_.back().second <= clockMs; }
 
 Position Motion::currentCellAt(long long clockMs) const {

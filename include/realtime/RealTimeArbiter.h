@@ -15,6 +15,7 @@ struct ArrivalEvent {
     Piece piece;
     Position from;
     Position to;
+    bool wasJump;
     bool intercepted;
     bool kingCaptured;
 };
@@ -48,6 +49,7 @@ struct TimeStep {
 // or is blocked by, another piece's move.
 class RealTimeArbiter {
 public:
+    long long clockMs() const;
     bool hasActiveMotion() const;
     bool hasMotionFrom(Position cell) const;
     void startMotion(Piece piece, Position source, Position destination);

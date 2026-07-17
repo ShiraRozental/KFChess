@@ -33,11 +33,12 @@ public:
     Position destination() const;
 
 private:
-    Motion(Piece piece, Position source, Position destination, Waypoints waypoints);
+    Motion(Piece piece, Position source, Position destination, Waypoints waypoints, bool isJump);
 
     Piece piece_;
     Position source_;
     Position destination_;
+    bool isJump_;
 
     Waypoints waypoints_;
 };

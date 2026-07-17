@@ -173,7 +173,8 @@ TimeStep RealTimeArbiter::advanceTime(int ms) {
             piece.setState(Piece::State::Idle);
         }
         bool kingCaptured = captured && piece.kind() == PieceType::King;
-        events.push_back(ArrivalEvent{piece, motion.source(), motion.destination(), captured, kingCaptured});
+        events.push_back(ArrivalEvent{piece, motion.source(), motion.destination(),
+                                      motion.isJump(), captured, kingCaptured});
     }
 
     motions_.erase(
@@ -187,6 +188,10 @@ TimeStep RealTimeArbiter::advanceTime(int ms) {
 // actual position along its trajectory at the current clock, not always
 // its source), so GameEngine can compose a snapshot in which mid-motion
 // pieces never disappear and are shown where they really are.
+long long RealTimeArbiter::clockMs() const {
+    return clockMs_;
+}
+
 std::vector<InFlightPiece> RealTimeArbiter::inFlightPieces() const {
     std::vector<InFlightPiece> fliers;
     fliers.reserve(motions_.size());

@@ -60,13 +60,14 @@ void GameEngine::wait(int ms) {
     TimeStep step = arbiter_.advanceTime(ms);
     for (const ArrivalEvent& event : step.arrivals) {
         if (event.intercepted) {
+            notifyPieceCaptured(event.piece, opponentOf(event.piece.color()));
             if (event.kingCaptured) {
                 gameState_ = winningStateFor(opponentOf(event.piece.color()));
             }
             continue;
         }
 
-        bool wasJump = (event.from == event.to);
+        bool wasJump = event.wasJump;
 
         if (isGameOver()) {
             landPiece(event.piece, event.from, wasJump);
@@ -81,8 +82,14 @@ void GameEngine::wait(int ms) {
 
         bool capturesKing = target && target->kind() == PieceType::King;
 
+        if (target) {
+            notifyPieceCaptured(*target, event.piece.color());
+        }
         board_.removePiece(event.to.row, event.to.col);
         landPiece(event.piece, event.to, wasJump);
+        if (wasJump || event.from != event.to) {
+            notifyMoveApplied(event, wasJump);
+        }
 
         if (capturesKing) {
             gameState_ = winningStateFor(event.piece.color());
@@ -108,6 +115,26 @@ GameSnapshot GameEngine::snapshot() const {
     }
     return GameSnapshot(std::move(display), isGameOver(), winner(),
                         arbiter_.cooldownProgressByPiece(), std::move(inFlightPositions));
+}
+
+void GameEngine::addListener(GameEventListener& listener) {
+    listeners_.push_back(&listener);
+}
+
+void GameEngine::notifyMoveApplied(const ArrivalEvent& event, bool wasJump) {
+    MoveAppliedEvent moveEvent{event.piece.color(), event.piece.kind(),
+                               event.from, event.to, wasJump, arbiter_.clockMs()};
+    for (GameEventListener* listener : listeners_) {
+        listener->onMoveApplied(moveEvent);
+    }
+}
+
+void GameEngine::notifyPieceCaptured(const Piece& captured, PieceColor capturedBy) {
+    PieceCapturedEvent captureEvent{captured.color(), captured.kind(),
+                                    capturedBy, arbiter_.clockMs()};
+    for (GameEventListener* listener : listeners_) {
+        listener->onPieceCaptured(captureEvent);
+    }
 }
 
 // Places a piece whose flight has resolved (normally, or voided by the game
