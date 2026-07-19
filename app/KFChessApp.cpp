@@ -11,6 +11,7 @@
 #include "io/BoardParser.h"
 #include "view/GameScreenLayout.h"
 #include "view/ImageView.h"
+#include "view/ScreenMetrics.h"
 
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
@@ -18,7 +19,6 @@
 #endif
 
 namespace {
-    constexpr int kCellSizePixels = 100;
     constexpr int kFrameMs = 33;
     constexpr int kEscapeKeyCode = 27;
     constexpr const char* kAssetsDirName = "assets";
@@ -77,8 +77,10 @@ namespace {
         std::filesystem::path assets = findAssetsRoot(exePath);
         int rows = parsed.board.rowCount();
         int cols = parsed.board.colCount();
-        GameScreenLayout layout(rows, cols, kCellSizePixels);
-        BoardMapper mapper(rows, cols, kCellSizePixels, layout.boardOrigin());
+        int cellSize = GameScreenLayout::fitCellSize(rows, cols,
+                                                     ScreenMetrics::availableWindowSize());
+        GameScreenLayout layout(rows, cols, cellSize);
+        BoardMapper mapper(rows, cols, cellSize, layout.boardOrigin());
         GameEngine game(std::move(parsed.board));
         MovesLog movesLog(rows);
         ScoreBoard scoreBoard;

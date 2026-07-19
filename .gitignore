@@ -1,6 +1,5 @@
-# Build directory - auto-generated, no need to track in git
-build/
-build_tests/
+# Build directories - auto-generated, no need to track in git
+build*/
 out/
 
 # Generated coverage report (regenerate with gcovr)

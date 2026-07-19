@@ -1,6 +1,7 @@
 #pragma once
 #include "input/PixelPoint.h"
 #include "model/PieceColor.h"
+#include "view/PixelSize.h"
 
 struct PixelRect {
     int x;
@@ -12,6 +13,9 @@ struct PixelRect {
 class GameScreenLayout {
 public:
     GameScreenLayout(int rows, int cols, int cellSizePixels);
+
+    // Largest cell size whose resulting window still fits in `available`.
+    static int fitCellSize(int rows, int cols, PixelSize available);
 
     int windowWidth() const;
     int windowHeight() const;
