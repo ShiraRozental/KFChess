@@ -51,7 +51,7 @@ namespace {
     }
 
     // Walks up from the executable's directory until it finds the project
-    // root (the directory containing assets/), so the demo works no matter
+    // root (the directory containing assets/), so the game works no matter
     // which directory it is launched from.
     std::filesystem::path findAssetsRoot(const std::filesystem::path& exePath) {
         for (auto dir = exePath.parent_path(); !dir.empty(); dir = dir.parent_path()) {
@@ -66,7 +66,7 @@ namespace {
         return *winner == PieceColor::White ? "White" : "Black";
     }
 
-    int runDemo(const std::filesystem::path& exePath) {
+    int runGame(const std::filesystem::path& exePath) {
         std::istringstream boardText(kStandardBoard);
         ParsedInput parsed;
         std::string errorMessage;
@@ -121,9 +121,9 @@ namespace {
 
 int main(int argc, char* argv[]) {
     try {
-        return runDemo(executablePath(argv[0]));
+        return runGame(executablePath(argv[0]));
     } catch (const std::exception& error) {
-        std::cerr << "RenderDemo failed: " << error.what() << std::endl;
+        std::cerr << "KFChess failed: " << error.what() << std::endl;
         return 1;
     }
 }

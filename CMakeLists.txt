@@ -40,8 +40,8 @@ function(add_opencv_executable target entry_point)
 endfunction()
 
 # נקודת הכניסה של האפליקציה יושבת מחוץ ל-src/ (מקביל ל-app.py)
-add_opencv_executable(KFChess Main.cpp)
-add_opencv_executable(KFChessRenderDemo demo/RenderDemo.cpp)
+add_opencv_executable(KFChess app/KFChessApp.cpp)
+add_opencv_executable(KFChessScript Main.cpp)
 
 # --- Unit tests ---
 option(BUILD_TESTS "Build the doctest-based unit test suite" ON)
