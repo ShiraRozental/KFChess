@@ -10,7 +10,8 @@
 // if any, is under this pixel."
 class BoardMapper {
 public:
-    explicit BoardMapper(int rows = 0, int cols = 0, int cellSizePixels = 1);
+    explicit BoardMapper(int rows = 0, int cols = 0, int cellSizePixels = 1,
+                         PixelPoint origin = PixelPoint{0, 0});
 
     std::optional<Position> cellAt(int pixelX, int pixelY) const;
     PixelPoint topLeftPixelOf(const Position& cell) const;
@@ -23,4 +24,5 @@ private:
     int rows_;
     int cols_;
     int cellSizePixels_;
+    PixelPoint origin_;
 };

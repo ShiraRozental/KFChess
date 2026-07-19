@@ -66,6 +66,38 @@ TEST_CASE("board pixel dimensions are cells times cell size") {
     CHECK(mapper.cellSizePixels() == 50);
 }
 
+TEST_CASE("an origin offset shifts cellAt so the board starts at the origin") {
+    BoardMapper mapper(8, 8, 100, PixelPoint{290, 135});
+    std::optional<Position> cell = mapper.cellAt(290, 135);
+    REQUIRE(cell.has_value());
+    CHECK(*cell == Position{0, 0});
+    CHECK(mapper.cellAt(290 + 150, 135 + 250) == Position{2, 1});
+}
+
+TEST_CASE("a pixel left of or above the origin is outside the board") {
+    BoardMapper mapper(8, 8, 100, PixelPoint{290, 135});
+    CHECK_FALSE(mapper.cellAt(289, 135).has_value());
+    CHECK_FALSE(mapper.cellAt(290, 134).has_value());
+    CHECK_FALSE(mapper.cellAt(10, 10).has_value());
+}
+
+TEST_CASE("topLeftPixelOf adds the origin offset") {
+    BoardMapper mapper(8, 8, 100, PixelPoint{290, 135});
+    CHECK(mapper.topLeftPixelOf(Position{0, 0}) == PixelPoint{290, 135});
+    CHECK(mapper.topLeftPixelOf(Position{2, 3}) == PixelPoint{590, 335});
+    CHECK(mapper.topLeftPixelOf(BoardPoint{0.5, 0.5}) == PixelPoint{340, 185});
+}
+
+TEST_CASE("topLeftPixelOf stays the inverse of cellAt under an origin offset") {
+    BoardMapper mapper(4, 6, 50, PixelPoint{77, 33});
+    for (int row = 0; row < 4; ++row) {
+        for (int col = 0; col < 6; ++col) {
+            PixelPoint pixel = mapper.topLeftPixelOf(Position{row, col});
+            CHECK(mapper.cellAt(pixel.x, pixel.y) == Position{row, col});
+        }
+    }
+}
+
 TEST_CASE("PixelPoint equality compares both coordinates") {
     CHECK(PixelPoint{1, 2} == PixelPoint{1, 2});
     CHECK(PixelPoint{1, 2} != PixelPoint{2, 1});

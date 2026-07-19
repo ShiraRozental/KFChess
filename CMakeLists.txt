@@ -8,6 +8,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # הקבצים שם תלויים ב-OpenCV ומיועדים רק ל-exe הראשי, לא לטסטים
 file(GLOB_RECURSE ALL_SOURCES "src/*.cpp")
 file(GLOB_RECURSE VIEW_SOURCES "src/view/*.cpp")
+set(PURE_VIEW_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/view/GameScreenLayout.cpp")
+list(REMOVE_ITEM VIEW_SOURCES ${PURE_VIEW_SOURCES})
 set(CORE_SOURCES ${ALL_SOURCES})
 list(REMOVE_ITEM CORE_SOURCES ${VIEW_SOURCES})
 
