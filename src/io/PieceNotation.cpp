@@ -4,6 +4,8 @@ namespace {
     constexpr char kEmptyCellSymbol = '.';
     constexpr char kWhiteColorSymbol = 'w';
     constexpr char kBlackColorSymbol = 'b';
+    constexpr char kFirstFileLetter = 'a';
+    constexpr const char* kJumpMoveText = "Jump";
     const std::string kValidPieceLetters = "KQRBNP";
 
     std::optional<PieceType> charToPieceType(char c) {
@@ -59,4 +61,18 @@ std::optional<PieceCode> pieceFromToken(const std::string& token) {
 std::string encodeCell(const Piece* piece) {
     if (!piece) return std::string(1, kEmptyCellSymbol);
     return std::string(1, pieceColorToChar(piece->color())) + pieceTypeToChar(piece->kind());
+}
+
+std::string algebraicCell(const Position& cell, int boardRowCount) {
+    char file = static_cast<char>(kFirstFileLetter + cell.col);
+    int rank = boardRowCount - cell.row;
+    return std::string(1, file) + std::to_string(rank);
+}
+
+std::string moveText(PieceType kind, const Position& destination, bool isJump,
+                     int boardRowCount) {
+    if (isJump) return kJumpMoveText;
+    std::string cellName = algebraicCell(destination, boardRowCount);
+    if (kind == PieceType::Pawn) return cellName;
+    return pieceTypeToChar(kind) + cellName;
 }

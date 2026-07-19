@@ -44,3 +44,30 @@ TEST_CASE("encodeCell renders an occupied cell as color plus kind") {
     Piece piece(0, PieceColor::White, PieceType::Queen, Position{0, 0});
     CHECK(encodeCell(&piece) == "wQ");
 }
+
+TEST_CASE("algebraicCell maps the board corners with an inverted rank") {
+    CHECK(algebraicCell(Position{7, 0}, 8) == "a1");
+    CHECK(algebraicCell(Position{0, 7}, 8) == "h8");
+    CHECK(algebraicCell(Position{0, 0}, 8) == "a8");
+    CHECK(algebraicCell(Position{7, 7}, 8) == "h1");
+}
+
+TEST_CASE("algebraicCell maps a middle cell") {
+    CHECK(algebraicCell(Position{3, 4}, 8) == "e5");
+}
+
+TEST_CASE("algebraicCell follows the given board height") {
+    CHECK(algebraicCell(Position{0, 0}, 4) == "a4");
+}
+
+TEST_CASE("moveText renders a pawn move as the bare destination") {
+    CHECK(moveText(PieceType::Pawn, Position{3, 4}, false, 8) == "e5");
+}
+
+TEST_CASE("moveText prefixes a non-pawn move with the piece letter") {
+    CHECK(moveText(PieceType::Knight, Position{5, 5}, false, 8) == "Nf3");
+}
+
+TEST_CASE("moveText renders a jump as Jump regardless of destination") {
+    CHECK(moveText(PieceType::Queen, Position{3, 4}, true, 8) == "Jump");
+}
