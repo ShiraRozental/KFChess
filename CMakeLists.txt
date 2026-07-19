@@ -18,7 +18,17 @@ set(OPENCV_DIR "${CMAKE_CURRENT_SOURCE_DIR}/third_party/OpenCV_451")
 set(OPENCV_INCLUDE_DIR "${OPENCV_DIR}/include")
 set(OPENCV_LIB_DIR "${OPENCV_DIR}/bin")
 
+# הבינאריים ב-third_party/ הם .lib בפורמט MSVC. הבדיקה כאן ולא ברמת הפרויקט
+# כדי ש-KFChessTests, שלא נוגע ב-OpenCV, ימשיך להיבנות בכל מהדר.
 function(add_opencv_executable target entry_point)
+    if(NOT MSVC)
+        message(FATAL_ERROR
+            "Target '${target}' links the OpenCV binaries bundled in third_party/, "
+            "which are MSVC-format .lib files and cannot be linked by ${CMAKE_CXX_COMPILER_ID}. "
+            "Configure with the MSVC toolchain, e.g. "
+            "cmake -S . -B build -G \"Visual Studio 17 2022\" -A x64, "
+            "or pass -DBUILD_APP=OFF to build the tests alone.")
+    endif()
     add_executable(${target} ${entry_point} ${CORE_SOURCES} ${VIEW_SOURCES})
     target_include_directories(${target} PRIVATE include third_party ${OPENCV_INCLUDE_DIR})
     target_link_directories(${target} PRIVATE ${OPENCV_LIB_DIR})
@@ -40,8 +50,12 @@ function(add_opencv_executable target entry_point)
 endfunction()
 
 # נקודת הכניסה של האפליקציה יושבת מחוץ ל-src/ (מקביל ל-app.py)
-add_opencv_executable(KFChess app/KFChessApp.cpp)
-add_opencv_executable(KFChessScript Main.cpp)
+option(BUILD_APP "Build the OpenCV-backed executables (requires the MSVC toolchain)" ON)
+
+if(BUILD_APP)
+    add_opencv_executable(KFChess app/KFChessApp.cpp)
+    add_opencv_executable(KFChessScript Main.cpp)
+endif()
 
 # --- Unit tests ---
 option(BUILD_TESTS "Build the doctest-based unit test suite" ON)
