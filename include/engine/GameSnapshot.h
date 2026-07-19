@@ -16,7 +16,10 @@ public:
                  std::map<PieceId, double> cooldownProgress = {},
                  std::map<PieceId, BoardPoint> inFlightPositions = {});
 
-    const Board& board() const;
+    // Rejected on temporaries: the returned reference would outlive the
+    // snapshot it points into.
+    const Board& board() const &;
+    const Board& board() && = delete;
     bool isGameOver() const;
     std::optional<PieceColor> winner() const;
     std::optional<double> cooldownProgressOf(PieceId pieceId) const;

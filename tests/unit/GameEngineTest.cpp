@@ -19,7 +19,8 @@ namespace {
     }
 
     Controller makeController(GameEngine& game) {
-        const Board& board = game.snapshot().board();
+        const GameSnapshot snapshot = game.snapshot();
+        const Board& board = snapshot.board();
         return Controller(game, BoardMapper(board.rowCount(), board.colCount(), kCellSizePixels));
     }
 }

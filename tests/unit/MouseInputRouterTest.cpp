@@ -16,7 +16,8 @@ namespace {
     }
 
     Piece::State stateAt(const GameEngine& game, const Position& cell) {
-        const Piece* piece = game.snapshot().board().pieceAt(cell.row, cell.col);
+        const GameSnapshot snapshot = game.snapshot();
+        const Piece* piece = snapshot.board().pieceAt(cell.row, cell.col);
         REQUIRE(piece != nullptr);
         return piece->state();
     }

@@ -8,7 +8,7 @@ GameSnapshot::GameSnapshot(Board board, bool gameOver, std::optional<PieceColor>
       inFlightPositions_(std::move(inFlightPositions)) {
 }
 
-const Board& GameSnapshot::board() const { return board_; }
+const Board& GameSnapshot::board() const & { return board_; }
 bool GameSnapshot::isGameOver() const { return gameOver_; }
 std::optional<PieceColor> GameSnapshot::winner() const { return winner_; }
 
