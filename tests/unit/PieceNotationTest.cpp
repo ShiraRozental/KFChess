@@ -45,6 +45,16 @@ TEST_CASE("encodeCell renders an occupied cell as color plus kind") {
     CHECK(encodeCell(&piece) == "wQ");
 }
 
+TEST_CASE("fileLabel maps a column to its letter") {
+    CHECK(fileLabel(0) == "a");
+    CHECK(fileLabel(7) == "h");
+}
+
+TEST_CASE("rankLabel counts ranks from the bottom") {
+    CHECK(rankLabel(0, 8) == "8");
+    CHECK(rankLabel(7, 8) == "1");
+}
+
 TEST_CASE("algebraicCell maps the board corners with an inverted rank") {
     CHECK(algebraicCell(Position{7, 0}, 8) == "a1");
     CHECK(algebraicCell(Position{0, 7}, 8) == "h8");

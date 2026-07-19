@@ -3,10 +3,13 @@
 #include <sstream>
 #include <string>
 #include "engine/GameEngine.h"
+#include "engine/MovesLog.h"
+#include "engine/ScoreBoard.h"
 #include "input/BoardMapper.h"
 #include "input/Controller.h"
 #include "input/MouseInputRouter.h"
 #include "io/BoardParser.h"
+#include "view/GameScreenLayout.h"
 #include "view/ImageView.h"
 
 #ifdef _WIN32
@@ -19,6 +22,8 @@ namespace {
     constexpr int kFrameMs = 33;
     constexpr int kEscapeKeyCode = 27;
     constexpr const char* kAssetsDirName = "assets";
+    constexpr const char* kWhitePlayerName = "White";
+    constexpr const char* kBlackPlayerName = "Black";
 
     const std::string kStandardBoard =
         "Board:\n"
@@ -70,9 +75,17 @@ namespace {
         }
 
         std::filesystem::path assets = findAssetsRoot(exePath);
-        BoardMapper mapper(parsed.board.rowCount(), parsed.board.colCount(), kCellSizePixels);
+        int rows = parsed.board.rowCount();
+        int cols = parsed.board.colCount();
+        GameScreenLayout layout(rows, cols, kCellSizePixels);
+        BoardMapper mapper(rows, cols, kCellSizePixels, layout.boardOrigin());
         GameEngine game(std::move(parsed.board));
-        ImageView view(mapper,
+        MovesLog movesLog(rows);
+        ScoreBoard scoreBoard;
+        game.addListener(movesLog);
+        game.addListener(scoreBoard);
+        ImageView view(mapper, layout, movesLog, scoreBoard,
+                       PlayerNames{kWhitePlayerName, kBlackPlayerName},
                        assets / "images" / "pieces",
                        assets / "images" / "board_classic.png");
         Controller controller(game, mapper);

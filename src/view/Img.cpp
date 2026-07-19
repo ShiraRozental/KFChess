@@ -34,6 +34,11 @@ Img::Img() {
     // Constructor - img is automatically initialized as empty
 }
 
+Img& Img::create(int width, int height, const cv::Scalar& color) {
+    img = cv::Mat(height, width, CV_8UC3, color);
+    return *this;
+}
+
 Img& Img::read(const std::filesystem::path& path,
                const std::pair<int, int>& size,
                bool keep_aspect,
@@ -147,6 +152,12 @@ void Img::fill_rect(int x, int y, int width, int height, const cv::Scalar& color
     if (width <= 0 || height <= 0) return;
 
     cv::rectangle(img, cv::Rect(x, y, width, height), color, cv::FILLED);
+}
+
+int Img::text_width(const std::string& txt, double font_size, int thickness) {
+    int baseline = 0;
+    return cv::getTextSize(txt, cv::FONT_HERSHEY_SIMPLEX, font_size,
+                           thickness, &baseline).width;
 }
 
 Img Img::clone() const {

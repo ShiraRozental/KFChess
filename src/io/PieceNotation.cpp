@@ -63,10 +63,16 @@ std::string encodeCell(const Piece* piece) {
     return std::string(1, pieceColorToChar(piece->color())) + pieceTypeToChar(piece->kind());
 }
 
+std::string fileLabel(int col) {
+    return std::string(1, static_cast<char>(kFirstFileLetter + col));
+}
+
+std::string rankLabel(int row, int boardRowCount) {
+    return std::to_string(boardRowCount - row);
+}
+
 std::string algebraicCell(const Position& cell, int boardRowCount) {
-    char file = static_cast<char>(kFirstFileLetter + cell.col);
-    int rank = boardRowCount - cell.row;
-    return std::string(1, file) + std::to_string(rank);
+    return fileLabel(cell.col) + rankLabel(cell.row, boardRowCount);
 }
 
 std::string moveText(PieceType kind, const Position& destination, bool isJump,

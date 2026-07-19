@@ -18,6 +18,8 @@ public:
      * @param interpolation OpenCV interpolation flag (e.g., cv::INTER_AREA for shrink, cv::INTER_LINEAR for enlarge)
      * @return Reference to this object for method chaining
      */
+    Img& create(int width, int height, const cv::Scalar& color);
+
     Img& read(const std::filesystem::path& path,
               const std::pair<int, int>& size = {},
               bool keep_aspect = false,
@@ -56,6 +58,8 @@ public:
      * @param color Fill color (BGR or BGRA)
      */
     void fill_rect(int x, int y, int width, int height, const cv::Scalar& color);
+
+    static int text_width(const std::string& txt, double font_size, int thickness = 1);
     
     Img clone() const;
 
