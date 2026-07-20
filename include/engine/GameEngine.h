@@ -53,6 +53,9 @@ public:
 private:
     void notifyMoveApplied(const ArrivalEvent& event, bool wasJump);
     void notifyPieceCaptured(const Piece& captured, PieceColor capturedBy);
+    void notifyGameStarted();
+    void notifyGameEnded(PieceColor winner);
+    void finishGame(PieceColor winner);
     void landPiece(Piece piece, Position cell, bool wasJump);
     void clearRestAt(Position cell, PieceId pieceId);
     void promoteIfNeeded(int row, int col, PieceType type, PieceColor color);
@@ -63,4 +66,5 @@ private:
     RealTimeArbiter arbiter_;
     GameState gameState_ = GameState::InProgress;
     std::vector<GameEventListener*> listeners_;
+    bool started_ = false;
 };

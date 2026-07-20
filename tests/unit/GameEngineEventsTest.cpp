@@ -16,9 +16,13 @@ namespace {
     struct RecordingListener : GameEventListener {
         std::vector<MoveAppliedEvent> moves;
         std::vector<PieceCapturedEvent> captures;
+        std::vector<GameStartedEvent> gameStarted;
+        std::vector<GameEndedEvent> gameEnded;
 
         void onMoveApplied(const MoveAppliedEvent& event) override { moves.push_back(event); }
         void onPieceCaptured(const PieceCapturedEvent& event) override { captures.push_back(event); }
+        void onGameStarted(const GameStartedEvent& event) override { gameStarted.push_back(event); }
+        void onGameEnded(const GameEndedEvent& event) override { gameEnded.push_back(event); }
     };
 }
 
@@ -139,4 +143,52 @@ TEST_CASE("capturing a king notifies onPieceCaptured and the game ends") {
     CHECK(listener.captures[0].capturedKind == PieceType::King);
     CHECK(listener.captures[0].capturedBy == PieceColor::White);
     CHECK(game.isGameOver());
+}
+
+TEST_CASE("wait notifies onGameStarted exactly once on the first call") {
+    GameEngine game = makeGame("Board:\nwR . .\n");
+    RecordingListener listener;
+    game.addListener(listener);
+
+    game.wait(100);
+
+    REQUIRE(listener.gameStarted.size() == 1);
+}
+
+TEST_CASE("onGameStarted is not fired again on subsequent wait calls") {
+    GameEngine game = makeGame("Board:\nwR . .\n");
+    RecordingListener listener;
+    game.addListener(listener);
+
+    game.wait(100);
+    game.wait(100);
+    game.wait(100);
+
+    CHECK(listener.gameStarted.size() == 1);
+}
+
+TEST_CASE("a listener added after the game has already started does not receive onGameStarted retroactively") {
+    GameEngine game = makeGame("Board:\nwR . .\n");
+    game.wait(100);
+
+    RecordingListener lateListener;
+    game.addListener(lateListener);
+    game.wait(100);
+
+    CHECK(lateListener.gameStarted.empty());
+}
+
+TEST_CASE("capturing a king notifies onGameEnded with the correct winner exactly once") {
+    GameEngine game = makeGame("Board:\nwR bK\n");
+    RecordingListener listener;
+    game.addListener(listener);
+
+    game.requestMove(Position{0, 0}, Position{0, 1});
+    game.wait(1000);
+
+    REQUIRE(listener.gameEnded.size() == 1);
+    CHECK(listener.gameEnded[0].winner == PieceColor::White);
+
+    game.wait(1000);
+    CHECK(listener.gameEnded.size() == 1);
 }

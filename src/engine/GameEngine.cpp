@@ -55,6 +55,10 @@ std::set<Position> GameEngine::legalDestinationsFrom(const Position& cell) const
 // motions still due in this same batch are voided and their pieces return
 // to where they took off from, so no piece ever vanishes from the board.
 void GameEngine::wait(int ms) {
+    if (!started_) {
+        started_ = true;
+        notifyGameStarted();
+    }
     if (isGameOver()) return;
 
     TimeStep step = arbiter_.advanceTime(ms);
@@ -62,7 +66,7 @@ void GameEngine::wait(int ms) {
         if (event.intercepted) {
             notifyPieceCaptured(event.piece, opponentOf(event.piece.color()));
             if (event.kingCaptured) {
-                gameState_ = winningStateFor(opponentOf(event.piece.color()));
+                finishGame(opponentOf(event.piece.color()));
             }
             continue;
         }
@@ -92,7 +96,7 @@ void GameEngine::wait(int ms) {
         }
 
         if (capturesKing) {
-            gameState_ = winningStateFor(event.piece.color());
+            finishGame(event.piece.color());
         }
 
         promoteIfNeeded(event.to.row, event.to.col, event.piece.kind(), event.piece.color());
@@ -135,6 +139,26 @@ void GameEngine::notifyPieceCaptured(const Piece& captured, PieceColor capturedB
     for (GameEventListener* listener : listeners_) {
         listener->onPieceCaptured(captureEvent);
     }
+}
+
+void GameEngine::notifyGameStarted() {
+    GameStartedEvent startEvent{};
+    for (GameEventListener* listener : listeners_) {
+        listener->onGameStarted(startEvent);
+    }
+}
+
+void GameEngine::notifyGameEnded(PieceColor winner) {
+    GameEndedEvent endEvent{winner};
+    for (GameEventListener* listener : listeners_) {
+        listener->onGameEnded(endEvent);
+    }
+}
+
+void GameEngine::finishGame(PieceColor winner) {
+    if (isGameOver()) return;
+    gameState_ = winningStateFor(winner);
+    notifyGameEnded(winner);
 }
 
 // Places a piece whose flight has resolved (normally, or voided by the game

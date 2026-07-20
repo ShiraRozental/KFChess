@@ -18,3 +18,10 @@ struct PieceCapturedEvent {
     PieceColor capturedBy;
     long long timestampMs;
 };
+
+struct GameStartedEvent {
+};
+
+struct GameEndedEvent {
+    PieceColor winner;
+};
