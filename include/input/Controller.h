@@ -1,6 +1,6 @@
 #pragma once
 #include <optional>
-#include "engine/GameEngine.h"
+#include "engine/IGameEngine.h"
 #include "input/BoardMapper.h"
 #include "model/Position.h"
 
@@ -15,11 +15,11 @@ struct ControllerResult {
 
 // Translates click input into game commands and owns the currently-
 // selected cell. Never decides chess legality, never touches Board or
-// RuleEngine directly — only GameEngine (for the move/jump request itself
+// RuleEngine directly — only IGameEngine (for the move/jump request itself
 // and the hasPieceAt validation-only query) and BoardMapper (pixel->cell).
 class Controller {
 public:
-    Controller(GameEngine& engine, BoardMapper mapper);
+    Controller(IGameEngine& engine, BoardMapper mapper);
 
     ControllerResult click(int pixelX, int pixelY);
     void jump(int pixelX, int pixelY);
@@ -27,7 +27,7 @@ public:
     std::optional<Position> selectedCell() const;
 
 private:
-    GameEngine& engine_;
+    IGameEngine& engine_;
     BoardMapper mapper_;
     std::optional<Position> selected_;
 };

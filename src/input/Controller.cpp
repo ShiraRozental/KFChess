@@ -1,6 +1,6 @@
 #include "input/Controller.h"
 
-Controller::Controller(GameEngine& engine, BoardMapper mapper)
+Controller::Controller(IGameEngine& engine, BoardMapper mapper)
     : engine_(engine), mapper_(mapper) {
 }
 

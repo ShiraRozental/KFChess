@@ -5,7 +5,7 @@
 namespace {
     struct Dispatch {
         Controller& controller;
-        GameEngine& engine;
+        IGameEngine& engine;
         std::ostream& out;
 
         void operator()(const ClickCommand& cmd) { controller.click(cmd.x, cmd.y); }
@@ -18,7 +18,7 @@ namespace {
     };
 }
 
-ScriptRunner::ScriptRunner(Controller& controller, GameEngine& engine, std::ostream& out)
+ScriptRunner::ScriptRunner(Controller& controller, IGameEngine& engine, std::ostream& out)
     : controller_(controller), engine_(engine), out_(out) {
 }
 

@@ -5,6 +5,7 @@
 #include <vector>
 #include "engine/GameEventListener.h"
 #include "engine/GameSnapshot.h"
+#include "engine/IGameEngine.h"
 #include "model/Board.h"
 #include "model/GameState.h"
 #include "model/PieceColor.h"
@@ -12,41 +13,25 @@
 #include "model/Position.h"
 #include "realtime/RealTimeArbiter.h"
 
-// Result of a requestMove call: whether it was accepted, and a stable
-// reason — "ok" when accepted, "game_over"/"motion_in_progress" for
-// application-level rejections, or the rule-level reason copied straight
-// through from RuleEngine's MoveValidation.
-struct MoveResult {
-    bool is_accepted;
-    std::string reason;
-};
-
-namespace MoveResultReason {
-    constexpr const char* Ok = "ok";
-    constexpr const char* GameOver = "game_over";
-    constexpr const char* MotionInProgress = "motion_in_progress";
-    constexpr const char* CoolingDown = "cooling_down";
-}
-
 // The application-service coordinator: the public command boundary used by
 // Controller and ScriptRunner. Speaks only in board cells (Position) —
 // no pixels, no text parsing, no rendering, no piece-specific movement
 // logic (that's RuleEngine/PieceRules) — and delegates all motion timing
 // to RealTimeArbiter.
-class GameEngine {
+class GameEngine : public IGameEngine {
 public:
     explicit GameEngine(Board board = Board());
 
-    MoveResult requestMove(const Position& source, const Position& destination);
-    void requestJump(const Position& cell);
+    MoveResult requestMove(const Position& source, const Position& destination) override;
+    void requestJump(const Position& cell) override;
 
-    bool hasPieceAt(const Position& pos) const;
-    std::set<Position> legalDestinationsFrom(const Position& cell) const;
-    void wait(int ms);
-    GameSnapshot snapshot() const;
+    bool hasPieceAt(const Position& pos) const override;
+    std::set<Position> legalDestinationsFrom(const Position& cell) const override;
+    void wait(int ms) override;
+    GameSnapshot snapshot() const override;
 
-    bool isGameOver() const;
-    std::optional<PieceColor> winner() const;
+    bool isGameOver() const override;
+    std::optional<PieceColor> winner() const override;
 
     void addListener(GameEventListener& listener);
 

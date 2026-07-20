@@ -119,3 +119,16 @@ TEST_CASE("jump at an out-of-bounds pixel is ignored") {
     game.wait(1000);
     CHECK(game.hasPieceAt(Position{0, 0})); // unaffected
 }
+
+TEST_CASE("Controller drives the engine through the IGameEngine interface") {
+    GameEngine game = makeGame("Board:\nwK . .\n. . .\n. . .\n");
+    IGameEngine& engine = game;
+    Controller controller(engine, BoardMapper(3, 3, kCellSizePixels));
+
+    controller.click(50, 50);
+    ControllerResult result = controller.click(150, 150);
+
+    CHECK(result.moveResult.is_accepted);
+    engine.wait(1000);
+    CHECK(engine.hasPieceAt(Position{1, 1}));
+}

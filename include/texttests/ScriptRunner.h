@@ -1,19 +1,19 @@
 #pragma once
 #include <ostream>
 #include <string>
-#include "engine/GameEngine.h"
+#include "engine/IGameEngine.h"
 #include "input/Controller.h"
 #include "texttests/ScriptCommand.h"
 
 class ScriptRunner {
 public:
-    ScriptRunner(Controller& controller, GameEngine& engine, std::ostream& out);
+    ScriptRunner(Controller& controller, IGameEngine& engine, std::ostream& out);
 
     void run(const Command& command);
 
 private:
     Controller& controller_;
-    GameEngine& engine_;
+    IGameEngine& engine_;
     std::ostream& out_;
 };
 
