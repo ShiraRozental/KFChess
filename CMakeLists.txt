@@ -4,14 +4,21 @@ project(KFChess)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# איסוף קבצי הלוגיקה מתוך src (כולל תת-תיקיות), חוץ מ-src/view -
-# הקבצים שם תלויים ב-OpenCV ומיועדים רק ל-exe הראשי, לא לטסטים
+# איסוף קבצי הלוגיקה מתוך src (כולל תת-תיקיות), חוץ מ-src/client/view -
+# הקבצים שם תלויים ב-OpenCV ומיועדים רק ל-exe הראשי, לא לטסטים.
+# texttests/ יושב מחוץ ל-src/ (מודול עצמאי בשורש) ולכן נאסף בנפרד.
 file(GLOB_RECURSE ALL_SOURCES "src/*.cpp")
-file(GLOB_RECURSE VIEW_SOURCES "src/view/*.cpp")
-set(PURE_VIEW_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/view/GameScreenLayout.cpp")
+file(GLOB TEXTTEST_SOURCES "texttests/*.cpp")
+file(GLOB_RECURSE VIEW_SOURCES "src/client/view/*.cpp")
+set(PURE_VIEW_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/client/view/GameScreenLayout.cpp")
 list(REMOVE_ITEM VIEW_SOURCES ${PURE_VIEW_SOURCES})
-set(CORE_SOURCES ${ALL_SOURCES})
+
+# נקודות כניסה עם main() משלהן - לא חלק מקבצי הלוגיקה המשותפים.
+set(CLIENT_APP_ENTRY "${CMAKE_CURRENT_SOURCE_DIR}/src/client/app/KFChessApp.cpp")
+
+set(CORE_SOURCES ${ALL_SOURCES} ${TEXTTEST_SOURCES})
 list(REMOVE_ITEM CORE_SOURCES ${VIEW_SOURCES})
+list(REMOVE_ITEM CORE_SOURCES ${CLIENT_APP_ENTRY})
 
 # --- OpenCV (מגיע ארוז בפרויקט תחת third_party/, בלי צורך בהתקנת מערכת) ---
 set(OPENCV_DIR "${CMAKE_CURRENT_SOURCE_DIR}/third_party/OpenCV_451")
@@ -30,7 +37,7 @@ function(add_opencv_executable target entry_point)
             "or pass -DBUILD_APP=OFF to build the tests alone.")
     endif()
     add_executable(${target} ${entry_point} ${CORE_SOURCES} ${VIEW_SOURCES})
-    target_include_directories(${target} PRIVATE include third_party ${OPENCV_INCLUDE_DIR})
+    target_include_directories(${target} PRIVATE include ${CMAKE_CURRENT_SOURCE_DIR} third_party ${OPENCV_INCLUDE_DIR})
     target_link_directories(${target} PRIVATE ${OPENCV_LIB_DIR})
     target_link_libraries(${target} PRIVATE
         $<$<CONFIG:Debug>:${OPENCV_LIB_DIR}/opencv_world451d.lib>
@@ -49,11 +56,28 @@ function(add_opencv_executable target entry_point)
     endif()
 endfunction()
 
-# נקודת הכניסה של האפליקציה יושבת מחוץ ל-src/ (מקביל ל-app.py)
-option(BUILD_APP "Build the OpenCV-backed executables (requires the MSVC toolchain)" ON)
+# KFChess נקודת הכניסה שלו (KFChessApp.cpp) יושבת ב-src/client/app/ ולכן
+# הוצאה מ-CORE_SOURCES למעלה; KFChessScript משתמש ב-Main.cpp שבשורש.
+# ברירת המחדל ON רק תחת MSVC - על מהדר אחר ה-exe ממילא לא ניתן ללינק
+# מול ה-.lib של OpenCV, אז ברירת מחדל OFF נמנעת מכשל configure מיותר
+# (הטסטים בונים בכל מהדר); מי שיבקש BUILD_APP=ON על מהדר אחר עדיין יקבל
+# את ה-guard המפורש למטה.
+set(BUILD_APP_DEFAULT OFF)
+if(MSVC)
+    set(BUILD_APP_DEFAULT ON)
+endif()
+option(BUILD_APP "Build the OpenCV-backed executables (requires the MSVC toolchain)" ${BUILD_APP_DEFAULT})
+
+if(NOT MSVC AND BUILD_APP)
+    message(WARNING
+        "BUILD_APP was enabled but the bundled OpenCV libraries in third_party/ are "
+        "MSVC-format .lib files and cannot be linked by ${CMAKE_CXX_COMPILER_ID}. "
+        "Disabling the OpenCV-backed executables for this configuration.")
+    set(BUILD_APP OFF CACHE BOOL "Build the OpenCV-backed executables (requires the MSVC toolchain)" FORCE)
+endif()
 
 if(BUILD_APP)
-    add_opencv_executable(KFChess app/KFChessApp.cpp)
+    add_opencv_executable(KFChess ${CLIENT_APP_ENTRY})
     add_opencv_executable(KFChessScript Main.cpp)
 endif()
 
@@ -68,14 +92,14 @@ if(BUILD_TESTS)
     target_include_directories(doctest INTERFACE tests)
     add_library(doctest::doctest ALIAS doctest)
 
-    # אותם קבצי לוגיקה כמו KFChess (Main.cpp לא נכלל: יש לו main משלו,
-    # ובלאו הכי הוא לא חלק מ-CORE_SOURCES כי הוא יושב מחוץ ל-src/).
-    # CORE_SOURCES בלבד, לא VIEW_SOURCES - כדי שהטסטים לעולם לא ידרשו
-    # OpenCV; ה-Renderer המופשט כבר מבודד אותם מכל מימוש view קונקרטי.
+    # אותם קבצי לוגיקה כמו KFChess. נקודות הכניסה עם main() משלהן לא
+    # נכללות: Main.cpp יושב מחוץ ל-src/, ו-KFChessApp.cpp הוצא מ-CORE_SOURCES
+    # במפורש למעלה. CORE_SOURCES בלבד, לא VIEW_SOURCES - כדי שהטסטים לעולם
+    # לא ידרשו OpenCV; ה-Renderer המופשט כבר מבודד אותם מכל מימוש view קונקרטי.
     file(GLOB_RECURSE TEST_SOURCES "tests/*.cpp")
 
     add_executable(KFChessTests ${TEST_SOURCES} ${CORE_SOURCES})
-    target_include_directories(KFChessTests PRIVATE include third_party)
+    target_include_directories(KFChessTests PRIVATE include ${CMAKE_CURRENT_SOURCE_DIR} third_party)
     target_link_libraries(KFChessTests PRIVATE doctest::doctest)
 
     # נתיב מוחלט לקבצי ה-fixtures, כדי שהטסטים ימצאו אותם בלי תלות בתיקיית

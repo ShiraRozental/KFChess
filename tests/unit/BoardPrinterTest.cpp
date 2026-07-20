@@ -1,6 +1,6 @@
 #include "doctest/doctest.h"
-#include "io/BoardPrinter.h"
-#include "io/BoardParser.h"
+#include "logic/io/BoardPrinter.h"
+#include "logic/io/BoardParser.h"
 #include <sstream>
 
 namespace {

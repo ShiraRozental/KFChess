@@ -1,5 +1,5 @@
 #include "doctest/doctest.h"
-#include "realtime/Motion.h"
+#include "logic/realtime/Motion.h"
 
 namespace {
     Piece makePiece(Position cell) {

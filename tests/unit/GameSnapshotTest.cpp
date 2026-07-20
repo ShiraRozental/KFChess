@@ -1,5 +1,5 @@
 #include "doctest/doctest.h"
-#include "engine/GameSnapshot.h"
+#include "logic/engine/GameSnapshot.h"
 
 TEST_CASE("a snapshot exposes the board it was constructed with") {
     Board board(1, 1);

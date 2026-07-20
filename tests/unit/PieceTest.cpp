@@ -1,5 +1,5 @@
 #include "doctest/doctest.h"
-#include "model/Piece.h"
+#include "logic/model/Piece.h"
 
 TEST_CASE("constructing a piece stores its id, color, kind, and cell") {
     Piece piece(7, PieceColor::White, PieceType::Knight, Position{2, 3});

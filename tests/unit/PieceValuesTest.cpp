@@ -1,5 +1,5 @@
 #include "doctest/doctest.h"
-#include "model/PieceValues.h"
+#include "logic/model/PieceValues.h"
 
 TEST_CASE("each piece type has its configured capture cost") {
     CHECK(pieceCostOf(PieceType::Pawn) == 1);

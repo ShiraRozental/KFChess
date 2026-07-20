@@ -1,9 +1,9 @@
 #include <iostream>
-#include "io/BoardParser.h"
-#include "io/BoardPrinter.h"
-#include "engine/GameEngine.h"
-#include "input/BoardMapper.h"
-#include "input/Controller.h"
+#include "logic/io/BoardParser.h"
+#include "logic/io/BoardPrinter.h"
+#include "logic/engine/GameEngine.h"
+#include "client/input/BoardMapper.h"
+#include "client/input/Controller.h"
 #include "texttests/ScriptRunner.h"
 
 namespace {

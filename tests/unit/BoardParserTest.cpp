@@ -1,5 +1,5 @@
 #include "doctest/doctest.h"
-#include "io/BoardParser.h"
+#include "logic/io/BoardParser.h"
 #include <sstream>
 
 namespace {

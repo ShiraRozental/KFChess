@@ -1,5 +1,5 @@
 #include "doctest/doctest.h"
-#include "engine/MovesLog.h"
+#include "logic/engine/MovesLog.h"
 
 namespace {
     MoveAppliedEvent knightMove(PieceColor color, long long timestampMs) {

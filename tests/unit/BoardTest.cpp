@@ -1,5 +1,5 @@
 #include "doctest/doctest.h"
-#include "model/Board.h"
+#include "logic/model/Board.h"
 
 namespace {
     Piece makePiece(PieceId id, PieceColor color, PieceType kind, int row, int col) {

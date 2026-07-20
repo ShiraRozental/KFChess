@@ -1,5 +1,5 @@
 #include "doctest/doctest.h"
-#include "realtime/CooldownConfig.h"
+#include "logic/realtime/CooldownConfig.h"
 
 TEST_CASE("every piece type has a positive cooldown duration") {
     CHECK(cooldownDurationMsFor(PieceType::King) > 0);

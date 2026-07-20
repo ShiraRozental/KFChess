@@ -1,5 +1,5 @@
 #include "doctest/doctest.h"
-#include "animation/PieceAssetPaths.h"
+#include "client/animation/PieceAssetPaths.h"
 #include <filesystem>
 
 namespace {

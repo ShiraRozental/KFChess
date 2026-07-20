@@ -1,6 +1,6 @@
 #include "doctest/doctest.h"
-#include "io/BoardParser.h"
-#include "rules/RuleEngine.h"
+#include "logic/io/BoardParser.h"
+#include "logic/rules/RuleEngine.h"
 #include <sstream>
 
 namespace {

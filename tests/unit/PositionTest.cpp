@@ -1,5 +1,5 @@
 #include "doctest/doctest.h"
-#include "model/Position.h"
+#include "logic/model/Position.h"
 #include <sstream>
 
 TEST_CASE("a position equals itself") {

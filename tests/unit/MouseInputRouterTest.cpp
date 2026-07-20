@@ -1,7 +1,7 @@
 #include "doctest/doctest.h"
-#include "engine/GameEngine.h"
-#include "input/MouseInputRouter.h"
-#include "io/BoardParser.h"
+#include "logic/engine/GameEngine.h"
+#include "client/input/MouseInputRouter.h"
+#include "logic/io/BoardParser.h"
 #include <sstream>
 
 namespace {

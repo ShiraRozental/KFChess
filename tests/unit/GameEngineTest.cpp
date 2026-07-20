@@ -1,10 +1,10 @@
 #include "doctest/doctest.h"
-#include "engine/GameEngine.h"
-#include "io/BoardParser.h"
-#include "input/BoardMapper.h"
-#include "input/Controller.h"
+#include "logic/engine/GameEngine.h"
+#include "logic/io/BoardParser.h"
+#include "client/input/BoardMapper.h"
+#include "client/input/Controller.h"
 #include "texttests/ScriptRunner.h"
-#include "rules/RuleEngine.h"
+#include "logic/rules/RuleEngine.h"
 #include <sstream>
 
 namespace {

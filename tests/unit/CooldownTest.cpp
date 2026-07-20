@@ -1,5 +1,5 @@
 #include "doctest/doctest.h"
-#include "realtime/Cooldown.h"
+#include "logic/realtime/Cooldown.h"
 
 TEST_CASE("a cooldown has not elapsed before its duration is reached") {
     Cooldown cooldown(1, Position{0, 0}, 1000);

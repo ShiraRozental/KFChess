@@ -1,5 +1,5 @@
 #include "doctest/doctest.h"
-#include "realtime/RealTimeArbiter.h"
+#include "logic/realtime/RealTimeArbiter.h"
 #include <algorithm>
 
 namespace {

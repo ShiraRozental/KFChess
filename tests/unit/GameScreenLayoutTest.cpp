@@ -1,5 +1,5 @@
 #include "doctest/doctest.h"
-#include "view/GameScreenLayout.h"
+#include "client/view/GameScreenLayout.h"
 
 namespace {
     const GameScreenLayout layout(8, 8, 100);

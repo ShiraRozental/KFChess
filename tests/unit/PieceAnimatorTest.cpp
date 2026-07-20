@@ -1,5 +1,5 @@
 #include "doctest/doctest.h"
-#include "animation/PieceAnimator.h"
+#include "client/animation/PieceAnimator.h"
 
 TEST_CASE("animationStateKey maps each visible piece state to its sprite folder name") {
     CHECK(animationStateKey(Piece::State::Idle) == "idle");

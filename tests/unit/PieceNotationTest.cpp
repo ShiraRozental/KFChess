@@ -1,5 +1,5 @@
 #include "doctest/doctest.h"
-#include "io/PieceNotation.h"
+#include "logic/io/PieceNotation.h"
 
 TEST_CASE("an empty token is recognized as empty") {
     CHECK(isEmptyToken("."));

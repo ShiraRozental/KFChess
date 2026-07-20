@@ -1,5 +1,5 @@
 #include "doctest/doctest.h"
-#include "io/TimestampFormat.h"
+#include "logic/io/TimestampFormat.h"
 
 TEST_CASE("zero formats as the zero clock") {
     CHECK(formatClockMs(0) == "00:00.000");

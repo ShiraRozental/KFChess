@@ -1,6 +1,6 @@
 #include "doctest/doctest.h"
-#include "engine/GameEngine.h"
-#include "io/BoardParser.h"
+#include "logic/engine/GameEngine.h"
+#include "logic/io/BoardParser.h"
 #include <sstream>
 #include <vector>
 

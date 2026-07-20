@@ -1,5 +1,5 @@
 #include "doctest/doctest.h"
-#include "animation/AnimationConfig.h"
+#include "client/animation/AnimationConfig.h"
 #include <filesystem>
 
 namespace {

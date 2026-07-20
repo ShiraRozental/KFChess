@@ -1,5 +1,5 @@
 #include "doctest/doctest.h"
-#include "animation/AnimationTimeline.h"
+#include "client/animation/AnimationTimeline.h"
 
 TEST_CASE("frameIndexAt is frame 0 right at the start, whether looping or not") {
     AnimationTimeline looping(5, 10, true);
