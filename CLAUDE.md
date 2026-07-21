@@ -2,14 +2,41 @@
 
 ## Project Overview
 A C++ chess game with modified rules, built iteratively.
-Core business logic is in place; the project has now moved on to designing the rendering/view layer (see `include/view/`, e.g. `Renderer.h`).
+Core game logic and the rendering/view layer are both in place. Current work is on the client/server split (see `SERVER_PLAN.md`).
+
+## Project Layout
+Headers live in `include/<area>/<module>/`; sources mirror them under `src/<area>/<module>/`. Four top-level areas:
+
+- **`logic/`** — the game itself, with no UI and no networking.
+  `model/` (Board, Piece, Position) · `rules/` (movement strategies, reachability) · `realtime/` (cooldowns, motion, arbiter) · `engine/` (GameEngine, scoring, moves log) · `io/` (board text parsing/printing, notation) · `bus/` (game event listeners, header-only) · `config/` (PieceDefinition, PieceCatalog)
+- **`client/`** — anything that renders or accepts input.
+  `view/` (Renderer, ImageView, sprites — **the only place OpenCV may be used**) · `animation/` · `input/` (Controller, mouse routing) · `app/` (entry point) · `net/`
+- **`server/`** — `session/` · `rooms/` · `matchmaking/` · `accounts/`. Scaffolded, largely empty.
+- **`shared/`** — used by both client and server: `protocol/` (WireProtocol) · `net/` · `common/`
+
+Unit tests live in `tests/unit/`, one file per production file, named `<Thing>Test.cpp`. Script-driven tests live in `texttests/`.
+
+### Placing a new file
+Decide by **dependency direction**, not by topic:
+
+- `logic/` must not include from `client/`, `server/`, or `shared/`
+- `client/` and `server/` may include from `logic/` and `shared/`
+- `shared/` may include from `logic/` only
+
+If putting a file somewhere would force an include that breaks the above, it belongs in a different area. Header graphs must stay acyclic between areas; a `.cpp` reaching into a sibling area is the normal composition point (e.g. `logic/model/*.cpp` reading `logic/config/`).
+
+**Exercise judgment on every new file rather than defaulting to the folder of whatever you edited last.** When two areas both look defensible, say which you'd pick and why, and confirm before creating it — moving a file after others include it is expensive.
+
+CMake globs sources recursively, so a new directory is picked up automatically, but CMake must be re-run to notice it.
 
 ## Modified Game Rules
 - **Simultaneous play**: Both Black and White move at the same time, no turns
 - **No Check/Checkmate**: Game ends ONLY when a King is captured
 - **Win condition**: Capture the opponent's King
 - **Cooldown/Rest system**: After ANY piece moves or jumps, it enters a "rest" state and cannot perform ANY action until cooldown expires
-  - Each piece type has a different cooldown duration (configured)
+  - Each piece type carries its own move cooldown in its `PieceDefinition`, so a new piece can be given a longer or shorter rest than the standard set.
+  - **All six standard pieces are currently configured to the same move cooldown** — a pawn and a queen rest equally long. That is a deliberate balance decision for the standard set, not a placeholder: don't "fix" it by spreading the values apart. It is a change of numbers in the catalog, never a change of structure.
+  - The jump cooldown is shared by every piece and is shorter than the move cooldown.
 - **Jump command**: A piece can jump in place with a SHORT cooldown (used for defense)
   - Jump is a manual command only — the player must explicitly issue a "Jump" action for that piece. It is never triggered automatically as a dodge.
   - A piece is only protected from capture while it is actively mid-jump (i.e., during the jump's own short cooldown). Once that cooldown ends and the piece returns to its normal/idle state, it has no special protection — it is subject to the ordinary Collision Rules like any other piece.
@@ -44,7 +71,7 @@ King=immediate win (no points)
 - Detect when a King is captured → announce winner
 
 ## Non-Functional Requirements
-- Scalable to thousands of simultaneous games
+- Scalable to thousands of simultaneous games — many games sharing **one** rule set, not many rule sets. There is a single `PieceCatalog::standard()` for the whole process; a game never needs its own catalog. Don't propose per-game or injectable catalogs.
 - Business logic must be fully decoupled from UI
 - Code must handle simultaneous moves (both players move at the same time)
 
@@ -55,13 +82,14 @@ All board/piece data must go through abstraction layers (interfaces/abstract cla
 Never access raw board data directly from outside the Board class.
 **Design approach**: Use strategy pattern for piece representation — can swap text for binary later.
 
-### Custom Game Rules (future)
-Nothing must be hard-coded.
-All piece movement rules must be data-driven or strategy-pattern based.
-Example: pawn promotion behavior must be injectable, not hard-coded.
-Users should eventually be able to define their own pieces and movement rules.
-All cooldown durations must come from configuration, not code.
-**Design approach**: PieceDefinition objects loaded from config, not hard-coded in code.
+### Custom Game Rules
+All piece movement rules must be data-driven or strategy-pattern based, and nothing about a piece may be hard-coded at its call sites.
+
+**Current state**: every piece attribute — symbol, capture cost, move cooldown, promotion target, movement rule — lives in a `PieceDefinition` registered in `buildStandardCatalog()` (`src/logic/config/PieceCatalog.cpp`). Adding a piece is: one `PieceType` enum value, one `MovementRule` subclass, one `registerPiece` line. No switch statements over `PieceType` anywhere — reintroducing one is a regression.
+
+**Still missing (future)**: the definitions are constructed in C++ rather than loaded from a config file, so end users cannot yet define their own pieces. The catalog is the seam where that loading will plug in; it should require no changes outside `PieceCatalog.cpp`.
+
+**Exception**: the jump cooldown is a single process-wide constant in `src/logic/realtime/CooldownConfig.cpp`, not a per-piece field — see the Cooldown/Rest system rules above.
 
 ## Design Patterns
 - Every component must be designed according to established design patterns (e.g. Strategy, Factory, Observer, Command, Decorator) rather than ad-hoc logic.
@@ -81,9 +109,13 @@ All cooldown durations must come from configuration, not code.
 ## Testing Requirements
 - Aim for 100% unit test coverage
 - Generate HTML coverage reports
-- Use a proper C++ testing framework (e.g. Google Test)
+- Framework is **doctest**, vendored at `tests/doctest/` so the build works offline. Do not introduce Google Test or any other framework.
 - Test edge cases: simultaneous moves, cooldown interactions, king capture
 
 ## Source Control
 - Commit after every meaningful addition
-- Commit message format: 'Add [feature/component]: [description]'
+- Commit message format:
+  - **Subject line**: `<Action verb> <what it was done to>: <short, professional description>`
+    - Action verb first (e.g. Add, Fix, Refactor, Remove), then the feature/component it applies to, then a colon and a concise professional summary.
+    - Example: `Add view/PieceView: per-piece sprite frame lookup by animation state`
+  - **Body** (below the subject, after a blank line): a detailed, professional description of the change — but not too long (a few sentences).
