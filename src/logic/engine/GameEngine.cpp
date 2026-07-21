@@ -2,8 +2,8 @@
 #include "logic/model/Piece.h"
 #include "logic/rules/RuleEngine.h"
 #include "logic/rules/LegalDestinations.h"
-#include "logic/rules/MovementRuleFactory.h"
 #include "logic/realtime/CooldownConfig.h"
+#include "logic/config/PieceCatalog.h"
 #include <utility>
 
 GameEngine::GameEngine(Board board) : board_(std::move(board)) {
@@ -169,7 +169,8 @@ void GameEngine::landPiece(Piece piece, Position cell, bool wasJump) {
     PieceType kind = piece.kind();
     piece.setState(wasJump ? Piece::State::ShortRest : Piece::State::LongRest);
     board_.addPiece(cell.row, cell.col, std::move(piece));
-    long long cooldownMs = wasJump ? jumpCooldownDurationMs() : cooldownDurationMsFor(kind);
+    long long cooldownMs = wasJump ? jumpCooldownDurationMs()
+                                   : PieceCatalog::standard().definitionFor(kind).cooldownMs;
     arbiter_.startCooldown(id, cell, cooldownMs);
 }
 
@@ -180,15 +181,11 @@ void GameEngine::clearRestAt(Position cell, PieceId pieceId) {
     piece->setState(Piece::State::Idle);
 }
 
-// Promotes the piece now sitting at (row, col) to a queen if its movement
-// rule reports that this row is far enough to promote (only pawns do).
-// Piece type and color must be the ones the piece had before this move, so
-// promotion is decided by the rule that actually made the move, not by
-// whatever ends up on the board.
 void GameEngine::promoteIfNeeded(int row, int col, PieceType type, PieceColor color) {
-    const MovementRule& rule = movementRuleFor(type, color);
-    if (rule.reachesPromotionRow(row, board_.rowCount())) {
-        board_.promote(row, col, PieceType::Queen);
+    const PieceDefinition& definition = PieceCatalog::standard().definitionFor(type);
+    if (!definition.promotes()) return;
+    if (definition.movementFor(color).reachesPromotionRow(row, board_.rowCount())) {
+        board_.promote(row, col, definition.promotesTo);
     }
 }
 

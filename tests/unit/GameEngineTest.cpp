@@ -481,6 +481,18 @@ TEST_CASE("a pawn that captures diagonally into the last row also becomes a quee
     CHECK(out.str() == "wQ . .\n. . .\n");
 }
 
+TEST_CASE("a rook reaching the far row is not promoted") {
+    GameEngine game = makeGame("Board:\n. . .\nwR . .\n");
+    Controller controller = makeController(game);
+    std::ostringstream out;
+    ScriptRunner runner(controller, game, out);
+    runLine(runner, "click 50 150");
+    runLine(runner, "click 50 50");
+    runLine(runner, "wait 1000");
+    runLine(runner, "print board");
+    CHECK(out.str() == "wR . .\n. . .\n");
+}
+
 TEST_CASE("isGameOver and winner report correctly before and after white wins") {
     GameEngine game = makeGame("Board:\nwR . bK\n");
     Controller controller = makeController(game);

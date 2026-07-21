@@ -1,8 +1,9 @@
 #include "logic/engine/ScoreBoard.h"
-#include "logic/model/PieceValues.h"
+#include "logic/config/PieceCatalog.h"
 
 void ScoreBoard::onPieceCaptured(const PieceCapturedEvent& event) {
-    scoreFor(event.capturedBy) += pieceCostOf(event.capturedKind);
+    scoreFor(event.capturedBy) +=
+        PieceCatalog::standard().definitionFor(event.capturedKind).captureCost;
 }
 
 int ScoreBoard::scoreOf(PieceColor color) const {

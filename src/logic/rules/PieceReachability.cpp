@@ -1,9 +1,10 @@
 #include "logic/rules/PieceReachability.h"
-#include "logic/rules/MovementRuleFactory.h"
+#include "logic/config/PieceCatalog.h"
 
 bool pieceCanReach(const Board& board, const Piece& mover, Position to) {
     Position from = mover.cell();
-    const MovementRule& rule = movementRuleFor(mover.kind(), mover.color());
+    const MovementRule& rule =
+        PieceCatalog::standard().definitionFor(mover.kind()).movementFor(mover.color());
 
     bool isCapture = !board.isEmpty(to.row, to.col);
     bool isDoubleMove = !isCapture &&
