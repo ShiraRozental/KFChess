@@ -11,16 +11,16 @@ namespace {
     constexpr std::size_t kFirstCellIndex = 2;
     constexpr std::size_t kSecondCellIndex = 4;
     constexpr std::size_t kCellLength = 2;
+}
 
-    char colorToChar(PieceColor color) {
-        return color == PieceColor::White ? kWhiteColorChar : kBlackColorChar;
-    }
+char wireColorToChar(PieceColor color) {
+    return color == PieceColor::White ? kWhiteColorChar : kBlackColorChar;
+}
 
-    std::optional<PieceColor> colorFromChar(char c) {
-        if (c == kWhiteColorChar) return PieceColor::White;
-        if (c == kBlackColorChar) return PieceColor::Black;
-        return std::nullopt;
-    }
+std::optional<PieceColor> wireColorFromChar(char c) {
+    if (c == kWhiteColorChar) return PieceColor::White;
+    if (c == kBlackColorChar) return PieceColor::Black;
+    return std::nullopt;
 }
 
 bool operator==(const WireCommand& lhs, const WireCommand& rhs) {
@@ -33,20 +33,20 @@ bool operator==(const WireCommand& lhs, const WireCommand& rhs) {
 
 std::string encodeMove(PieceColor color, PieceType piece,
                        const Position& from, const Position& to, int boardRowCount) {
-    return std::string(1, colorToChar(color)) + pieceTypeToChar(piece) +
+    return std::string(1, wireColorToChar(color)) + pieceTypeToChar(piece) +
            algebraicCell(from, boardRowCount) + algebraicCell(to, boardRowCount);
 }
 
 std::string encodeJump(PieceColor color, PieceType piece,
                        const Position& cell, int boardRowCount) {
-    return std::string(1, colorToChar(color)) + pieceTypeToChar(piece) +
+    return std::string(1, wireColorToChar(color)) + pieceTypeToChar(piece) +
            algebraicCell(cell, boardRowCount);
 }
 
 std::optional<WireCommand> parseCommand(const std::string& text, int boardRowCount) {
     if (text.length() != kMoveLength && text.length() != kJumpLength) return std::nullopt;
 
-    std::optional<PieceColor> color = colorFromChar(text[kColorIndex]);
+    std::optional<PieceColor> color = wireColorFromChar(text[kColorIndex]);
     std::optional<PieceType> piece = pieceTypeFromChar(text[kPieceIndex]);
     std::optional<Position> from =
         parseAlgebraicCell(text.substr(kFirstCellIndex, kCellLength), boardRowCount);

@@ -13,6 +13,26 @@ namespace {
     const Position h8{0, 7};
 }
 
+TEST_CASE("wireColorToChar uses the uppercase wire alphabet") {
+    CHECK(wireColorToChar(PieceColor::White) == 'W');
+    CHECK(wireColorToChar(PieceColor::Black) == 'B');
+}
+
+TEST_CASE("wireColorFromChar is the inverse of wireColorToChar") {
+    CHECK(wireColorFromChar('W') == std::optional<PieceColor>{PieceColor::White});
+    CHECK(wireColorFromChar('B') == std::optional<PieceColor>{PieceColor::Black});
+}
+
+TEST_CASE("wireColorFromChar rejects the board text format's lowercase colors") {
+    CHECK_FALSE(wireColorFromChar('w').has_value());
+    CHECK_FALSE(wireColorFromChar('b').has_value());
+}
+
+TEST_CASE("wireColorFromChar rejects an unrelated letter") {
+    CHECK_FALSE(wireColorFromChar('X').has_value());
+    CHECK_FALSE(wireColorFromChar('Q').has_value());
+}
+
 TEST_CASE("encode move: white queen e2 to e5 -> WQe2e5") {
     CHECK(encodeMove(PieceColor::White, PieceType::Queen, e2, e5, kBoardRows) == "WQe2e5");
 }

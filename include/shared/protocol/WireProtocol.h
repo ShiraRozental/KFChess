@@ -17,6 +17,9 @@ struct WireCommand {
 
 bool operator==(const WireCommand& lhs, const WireCommand& rhs);
 
+char wireColorToChar(PieceColor color);
+std::optional<PieceColor> wireColorFromChar(char c);
+
 std::string encodeMove(PieceColor color, PieceType piece,
                        const Position& from, const Position& to, int boardRowCount);
 std::string encodeJump(PieceColor color, PieceType piece,
