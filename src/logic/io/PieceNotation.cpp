@@ -6,20 +6,6 @@ namespace {
     constexpr char kBlackColorSymbol = 'b';
     constexpr char kFirstFileLetter = 'a';
     constexpr const char* kJumpMoveText = "Jump";
-    const std::string kValidPieceLetters = "KQRBNP";
-
-    std::optional<PieceType> charToPieceType(char c) {
-        switch (c) {
-            case 'K': return PieceType::King;
-            case 'Q': return PieceType::Queen;
-            case 'R': return PieceType::Rook;
-            case 'B': return PieceType::Bishop;
-            case 'N': return PieceType::Knight;
-            case 'P': return PieceType::Pawn;
-            default:  return std::nullopt;
-        }
-    }
-
     std::optional<PieceColor> charToPieceColor(char c) {
         switch (c) {
             case kWhiteColorSymbol: return PieceColor::White;
@@ -46,6 +32,18 @@ char pieceColorToChar(PieceColor color) {
     return color == PieceColor::White ? kWhiteColorSymbol : kBlackColorSymbol;
 }
 
+std::optional<PieceType> pieceTypeFromChar(char c) {
+    switch (c) {
+        case 'K': return PieceType::King;
+        case 'Q': return PieceType::Queen;
+        case 'R': return PieceType::Rook;
+        case 'B': return PieceType::Bishop;
+        case 'N': return PieceType::Knight;
+        case 'P': return PieceType::Pawn;
+        default:  return std::nullopt;
+    }
+}
+
 bool isEmptyToken(const std::string& token) {
     return token.length() == 1 && token[0] == kEmptyCellSymbol;
 }
@@ -53,9 +51,9 @@ bool isEmptyToken(const std::string& token) {
 std::optional<PieceCode> pieceFromToken(const std::string& token) {
     if (token.length() != 2) return std::nullopt;
     std::optional<PieceColor> color = charToPieceColor(token[0]);
-    if (!color) return std::nullopt;
-    if (kValidPieceLetters.find(token[1]) == std::string::npos) return std::nullopt;
-    return PieceCode{*color, *charToPieceType(token[1])};
+    std::optional<PieceType> kind = pieceTypeFromChar(token[1]);
+    if (!color || !kind) return std::nullopt;
+    return PieceCode{*color, *kind};
 }
 
 std::string encodeCell(const Piece* piece) {
@@ -73,6 +71,15 @@ std::string rankLabel(int row, int boardRowCount) {
 
 std::string algebraicCell(const Position& cell, int boardRowCount) {
     return fileLabel(cell.col) + rankLabel(cell.row, boardRowCount);
+}
+
+std::optional<Position> parseAlgebraicCell(const std::string& text, int boardRowCount) {
+    if (text.length() != 2) return std::nullopt;
+    int col = text[0] - kFirstFileLetter;
+    int rank = text[1] - '0';
+    if (col < 0 || col >= boardRowCount) return std::nullopt;
+    if (rank < 1 || rank > boardRowCount) return std::nullopt;
+    return Position{boardRowCount - rank, col};
 }
 
 std::string moveText(PieceType kind, const Position& destination, bool isJump,

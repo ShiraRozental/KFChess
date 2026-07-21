@@ -17,9 +17,11 @@ std::string encodeCell(const Piece* piece);
 
 char pieceTypeToChar(PieceType type);
 char pieceColorToChar(PieceColor color);
+std::optional<PieceType> pieceTypeFromChar(char c);
 
 std::string fileLabel(int col);
 std::string rankLabel(int row, int boardRowCount);
 std::string algebraicCell(const Position& cell, int boardRowCount);
+std::optional<Position> parseAlgebraicCell(const std::string& text, int boardRowCount);
 std::string moveText(PieceType kind, const Position& destination, bool isJump,
                      int boardRowCount);

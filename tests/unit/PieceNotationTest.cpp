@@ -81,3 +81,30 @@ TEST_CASE("moveText prefixes a non-pawn move with the piece letter") {
 TEST_CASE("moveText renders a jump as Jump regardless of destination") {
     CHECK(moveText(PieceType::Queen, Position{3, 4}, true, 8) == "Jump");
 }
+
+TEST_CASE("parseAlgebraicCell is the inverse of algebraicCell") {
+    std::optional<Position> cell = parseAlgebraicCell("e5", 8);
+    REQUIRE(cell.has_value());
+    CHECK(*cell == Position{3, 4});
+    CHECK(algebraicCell(*cell, 8) == "e5");
+}
+
+TEST_CASE("parseAlgebraicCell maps the board corners") {
+    CHECK(parseAlgebraicCell("a1", 8) == std::optional<Position>{Position{7, 0}});
+    CHECK(parseAlgebraicCell("h8", 8) == std::optional<Position>{Position{0, 7}});
+}
+
+TEST_CASE("parseAlgebraicCell rejects malformed or off-board cells") {
+    CHECK_FALSE(parseAlgebraicCell("", 8).has_value());
+    CHECK_FALSE(parseAlgebraicCell("2", 8).has_value());     // no file letter
+    CHECK_FALSE(parseAlgebraicCell("e", 8).has_value());     // no rank digit
+    CHECK_FALSE(parseAlgebraicCell("e0", 8).has_value());    // rank below range
+    CHECK_FALSE(parseAlgebraicCell("e9", 8).has_value());    // rank above range
+    CHECK_FALSE(parseAlgebraicCell("i2", 8).has_value());    // file beyond board
+}
+
+TEST_CASE("pieceTypeFromChar is the inverse of pieceTypeToChar") {
+    CHECK(pieceTypeFromChar('Q') == std::optional<PieceType>{PieceType::Queen});
+    CHECK(pieceTypeFromChar('N') == std::optional<PieceType>{PieceType::Knight});
+    CHECK_FALSE(pieceTypeFromChar('Z').has_value());
+}
